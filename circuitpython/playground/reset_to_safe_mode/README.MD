@@ -1,0 +1,6 @@
+- Copy both files (boot.py and code.py) to the device.
+- Hit reset.
+- No drive will show up!
+- When led fires in cyan hit the boot button to restart in safe mode.
+- In safe mode the drive will show up.
+- If you don't do anything an endless red light blinking will happen.
