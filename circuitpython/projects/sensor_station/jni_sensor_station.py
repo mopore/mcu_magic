@@ -2,8 +2,6 @@
 # circup install adafruit_vl53l1x
 # circup install adafruit_bh1750
 
-import time
-
 from jni_distance_provider import DistanceProvider
 from jni_aq_provider import Airquality, AirqualityProvider
 from jni_lightlevel_provider import LightlevelProvider
@@ -32,5 +30,3 @@ class SensorStation:
 		aq = self.aq_provider.get_airquality()
 		data = SensorData(distance, light_level, aq)
 		return data
-
-
