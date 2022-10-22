@@ -19,7 +19,8 @@ class MotionSensorHandler():
     MOTION_YES = True
     MOTION_NO = False
     NEW_MOTION_TIME_THRESHOLD = 6
-    BOARD_PIN = board.D13  # Adafruit TFT Feather name
+    #  BOARD_PIN = board.D13  # Adafruit TFT Feather name
+    BOARD_PIN = board.A0  # Adafruit QT Py ESP32-S3
 
     def __init__(self, motionReceiver: MotionReceiver):
         self.motion_receiver = motionReceiver
@@ -29,7 +30,7 @@ class MotionSensorHandler():
         self.last_new_motion_timestamp = 0
         self.last_motion_trigger = 0
         self.current_motion = self.MOTION_NO
-        motion_pin = DigitalInOut(board.D13)  # Adafruit TFT Feather name
+        motion_pin = DigitalInOut(self.BOARD_PIN)  # Adafruit TFT Feather name
         motion_pin.switch_to_input(pull=Pull.UP)
         self.motion_pin = motion_pin
     
