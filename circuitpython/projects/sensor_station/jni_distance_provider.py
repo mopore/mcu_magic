@@ -19,7 +19,9 @@ class DistanceProvider:
 	def __init__(self) -> None:
 		MODE_LONG = 2
 
-		i2c = board.I2C()
+		# i2c = board.I2C()
+		i2c = board.STEMMA_I2C()  # type: ignore
+
 		vl53 = adafruit_vl53l1x.VL53L1X(i2c)
 
 		# OPTIONAL: can set non-default values

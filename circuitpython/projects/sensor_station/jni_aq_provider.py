@@ -16,7 +16,8 @@ class Airquality:
 class AirqualityProvider:
 
     def __init__(self) -> None:
-        i2c = board.I2C()
+        # i2c = board.I2C()
+        i2c = board.STEMMA_I2C()  # type: ignore
         scd4x = adafruit_scd4x.SCD4X(i2c)
         scd4x.start_periodic_measurement()
         self.scd4x = scd4x
