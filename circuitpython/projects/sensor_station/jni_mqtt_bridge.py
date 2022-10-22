@@ -16,19 +16,20 @@ class MqttBridge:
 	# MQTT_SERVER_IP = "10.200.0.6"  # Quieter2 on Wireguard network
 	# MQTT_SERVER_IP = "192.168.199.214"  # PD Manajaro laptop on home network
 
-	HOSTNAME = "broombed2"
-	TOPIC_COMMAND = f"jniHome/services/{HOSTNAME}/command"
-	TOPIC_LIGHT_LEVEL = f"jniHome/objects/sensor_{HOSTNAME}/events/lightLevel"
-	TOPIC_MOTION = f"jniHome/objects/sensor_{HOSTNAME}/events/motion"
-	TOPIC_TEMPERATURE = f"jniHome/objects/sensor_{HOSTNAME}/events/temperature"
-	TOPIC_CO2 = f"jniHome/objects/sensor_{HOSTNAME}/events/co2"
-	TOPIC_HUMIDITY = f"jniHome/objects/sensor_{HOSTNAME}/events/humidity"
-	TOPIC_ALIVE_TICK = f"jniHome/services/sensor_{HOSTNAME}/aliveTick"  # All ten seconds...
 	ALIVE_VALUE = "ALIVE"
 	MAX_CONNECTION_ATTEMPTS = 4
 	UTF_8_NAME = "UTF-8"
 
-	def __init__(self) -> None:
+	def __init__(self, station_name) -> None:
+		self.station_name = station_name
+		self.TOPIC_COMMAND = f"jniHome/services/{station_name}/command"
+		self.TOPIC_LIGHT_LEVEL = f"jniHome/objects/sensor_{station_name}/events/lightLevel"
+		self.TOPIC_MOTION = f"jniHome/objects/sensor_{station_name}/events/motion"
+		self.TOPIC_TEMPERATURE = f"jniHome/objects/sensor_{station_name}/events/temperature"
+		self.TOPIC_CO2 = f"jniHome/objects/sensor_{station_name}/events/co2"
+		self.TOPIC_HUMIDITY = f"jniHome/objects/sensor_{station_name}/events/humidity"
+		self.TOPIC_ALIVE_TICK = f"jniHome/services/sensor_{station_name}/aliveTick"
+		
 		self.keep_running = True
 		self.connected = False
 		self.blocked = False
@@ -75,7 +76,7 @@ class MqttBridge:
 				if self.mqtt_client is None:
 					pool = socketpool.SocketPool(wifi.radio)
 					self.mqtt_client = mqtt.MQTT(
-						client_id=self.HOSTNAME, 
+						client_id=f"{self.station_name}{time.time()}",
 						broker=self.MQTT_SERVER_IP, 
 						socket_pool=pool,
 						is_ssl=False,
@@ -112,7 +113,6 @@ class MqttBridge:
 		# We should have a connection after 3 attempts and 17+ minutes...
 		if not self.connected:
 			print("Error: We should have a connection after 3 attempts and 17+ minutes...")
-			# TODO Exit and blink panic!
 			self.exit()
 
 	def publish_temperature(self, temperature: float):
@@ -228,7 +228,7 @@ def main() -> None:
 	print("Starting...")
 	jni_wifi.connect_wifi()
 	counter = 0
-	bridge = MqttBridge()
+	bridge = MqttBridge("test_station")
 	time_start = time.monotonic()
 	seconds_keep_alive = 5
 	print(f"Pushing an alive tick every 0.5 seconds for {seconds_keep_alive} seconds")

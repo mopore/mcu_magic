@@ -10,6 +10,7 @@ from adafruit_bitmap_font import bitmap_font
 from jni_data_handler import DataHandler
 from jni_sensor_station import SensorData, SensorStation
 from jni_aq_provider import Airquality
+from jni_motion_types import MotionEvent
 
 
 class TftDataHandler(DataHandler):
@@ -45,14 +46,24 @@ class TftDataHandler(DataHandler):
 		self.display = display
 		self.old_aq: Airquality | None = None
 		self.last_draw = time.monotonic()
+		self.present = False
 
 	def handle(self, sensor_data: SensorData) -> None:
 		time_passed = time.monotonic() - self.last_draw
 		if time_passed > 1:
-			distance_text = "-"
-			if sensor_data.distance is not None:
-				distance_text = f"{sensor_data.distance:.1f}"
-			text = f"Distance: {distance_text} cm *"
+			motion_text = "-"
+			if sensor_data.motion_event is not None:
+				if sensor_data.motion_event.new_motion is MotionEvent.NEW_MOTION:
+					motion_text = "New! *"
+					self.present = True
+				else:
+					motion_text = "Gone. *"
+					self.present = False
+			else:
+				if self.present:
+					motion_text = "(present)"
+			print(f"Motion: {motion_text}")
+			text = f"Motion: {motion_text}"
 			text = f"{text}\nLight Level: {sensor_data.light_level:.1f} lm *"
 			if sensor_data.aq is not None:
 				text = f"{text}\nCO2: {sensor_data.aq.co2:.1f} ppm *"

@@ -37,7 +37,8 @@ class MotionSensorHandler():
     def run(self) -> None:
         while self.keep_alive:
             try:
-                if self.motion_pin.value is self.MOTION_YES:
+                pin_value = self.motion_pin.value
+                if pin_value is self.MOTION_YES:
                     self.when_motion()
                 if self.current_motion:
                     current_timestamp = time.time()

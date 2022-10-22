@@ -5,7 +5,6 @@ from digitalio import DigitalInOut, Pull
 
 from jni_data_handler import DataHandler
 from jni_sensor_station import SensorData, SensorStation
-from jni_motion_handler import MotionHandler, MotionEventReceiver
 from jni_wifi import connect_wifi, disconnect_wifi
 from jni_mqtt_bridge import MqttBridge
 
@@ -18,21 +17,6 @@ BUTTON_YES = False
 BUTTON_NO = True
 
 
-class ThisMotionEventReceiver(MotionEventReceiver):
-	
-	NEW_MOTION = True
-	MOTION_GONE = False
-
-	def __init__(self, bridge: MqttBridge) -> None:
-		self.bridge = bridge
-
-	def on_new_motion(self) -> None:
-		self.bridge.publish_motion(self.NEW_MOTION)
-
-	def on_motion_gone(self) -> None:
-		self.bridge.publish_motion(self.MOTION_GONE)
-
-
 class MqttDataHandler(DataHandler):
 
 	ALIVE_TICK_INTERVAL = 10
@@ -43,7 +27,6 @@ class MqttDataHandler(DataHandler):
 		pixel: neopixel.NeoPixel, 
 		button: DigitalInOut
 	) -> None:
-		self.motionHandler = MotionHandler(ThisMotionEventReceiver(bridge))
 		self.bridge = bridge
 		self.last_tick = 0
 		self.alive_led_counter = 0
@@ -54,8 +37,9 @@ class MqttDataHandler(DataHandler):
 
 	def handle(self, sensor_data: SensorData) -> None:
 		# Publish data
-		self.motionHandler.handle_distance_data(sensor_data.distance)
 		self.bridge.publish_light_level(sensor_data.light_level)
+		if sensor_data.motion_event is not None:
+			self.bridge.publish_motion(sensor_data.motion_event.new_motion)
 		if sensor_data.aq is not None:
 			self.bridge.publish_co2(sensor_data.aq.co2)
 			self.bridge.publish_humidity(sensor_data.aq.humidity)
@@ -90,7 +74,7 @@ class MqttDataHandler(DataHandler):
 			self.pixel.fill(LED_RED)
 
 
-def prepare_datahandler() -> MqttDataHandler | None:
+def prepare_datahandler(station_name: str) -> MqttDataHandler | None:
 	button = DigitalInOut(board.BUTTON)
 	button.switch_to_input(pull=Pull.UP)
 	pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
@@ -105,7 +89,7 @@ def prepare_datahandler() -> MqttDataHandler | None:
 
 	bridge: MqttBridge | None = None
 	try:
-		bridge = MqttBridge()
+		bridge = MqttBridge(station_name)
 		pixel.fill(LED_GREEN)
 	except Exception as e:
 		print(f"Could not create bridge to MQTT broker: {e}")
@@ -121,7 +105,7 @@ def prepare_datahandler() -> MqttDataHandler | None:
 def main() -> None:
 	print("Starting...")
 	station = SensorStation()
-	mqtt_handler = prepare_datahandler()
+	mqtt_handler = prepare_datahandler("Test_from_main")
 	if mqtt_handler is None:
 		print("Could not create a data handler!")
 		return

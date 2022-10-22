@@ -2,7 +2,7 @@ import wifi
 import time
 
 try:
-	from jni_secrets import secrets
+	from secrets.jni_secrets import secrets
 except ImportError:
 	print("WiFi secrets are kept in secrets.py, please add them there!")
 	raise

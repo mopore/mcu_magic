@@ -6,6 +6,8 @@
 # circup install adafruit_st7789
 
 import time
+import neopixel
+import board
 from jni_mqtt_data_handler import prepare_datahandler
 from jni_sensor_station import SensorStation
 from jni_data_handler import DataHandler
@@ -14,25 +16,47 @@ from jni_console_data_handler import ConsoleDataHandler
 
 
 def main() -> None:
-	station = SensorStation()
+	LED_RED = (255, 0, 0)
+	LED_ORANGE = (255, 165, 0)
 
-	# Use the console data viewer to output the collected data to the console...
-	handlers: list[DataHandler] = [
-		ConsoleDataHandler(), 
-		# TftDataHandler(),
-	]
-	mqtt_handler = prepare_datahandler()
+	handlers: list[DataHandler] = []
+	station_name = f"teststation{time.time()}"
+	try:
+		station = SensorStation()
+		features_airquality = station.provides_air_quality()
+
+		if features_airquality:
+			print("Station should be: broombed")
+			# TODO Set station name
+		else:
+			print("Station should be: livingtv")
+			station_name = "livingtv"
+
+		# Use the console data viewer to output the collected data to the console...
+		handlers.append(ConsoleDataHandler())
+		# handlers.append(TftDataHandler())
+	except Exception as e:
+		print(f"FATAL: Could not create essential services! {e}")
+		pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
+		for _ in range(5):
+			pixel.fill(LED_ORANGE)
+			time.sleep(0.3)
+			pixel.fill(LED_RED)
+			time.sleep(0.3)
+		raise e
+	
+	mqtt_handler = prepare_datahandler(station_name)
 	if mqtt_handler is not None:
 		handlers.append(mqtt_handler)
 
 	FREQUENCE_SECS = 0.5
 	while True:
-		last_time = time.monotonic()
+		last_timestamp = time.monotonic()
 		sensor_data = station.collect_data()
 		for handler in handlers:
 			handler.handle(sensor_data)
 
-		time_diff = time.monotonic() - last_time
+		time_diff = time.monotonic() - last_timestamp
 		time_to_sleep = FREQUENCE_SECS - time_diff
 		if time_to_sleep < 0:
 			time_to_sleep = 0

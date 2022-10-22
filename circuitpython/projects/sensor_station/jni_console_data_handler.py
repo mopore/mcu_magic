@@ -1,3 +1,4 @@
+from jni_motion_types import MotionEvent
 from jni_data_handler import DataHandler
 from jni_sensor_station import SensorData, SensorStation
 import time
@@ -5,11 +6,22 @@ import time
 
 class ConsoleDataHandler(DataHandler):
 
+	def __init__(self) -> None:
+		self.present = False
+
 	def handle(self, sensor_data: SensorData) -> None:
-		distance_text = "-"
-		if sensor_data.distance is not None:
-			distance_text = f"{sensor_data.distance:.1f}"
-		print(f"Distance: {distance_text} cm")
+		motion_text = "-"
+		if sensor_data.motion_event is not None:
+			if sensor_data.motion_event.new_motion is MotionEvent.NEW_MOTION:
+				motion_text = "New!"
+				self.present = True
+			else:
+				motion_text = "Gone."
+				self.present = False
+		else:
+			if self.present:
+				motion_text = "(present)"
+		print(f"Motion: {motion_text}")
 		print(f"Light level: {sensor_data.light_level:.1f} Lumen")
 		if sensor_data.aq is not None:
 			print("CO2: %d ppm" % sensor_data.aq.co2)
