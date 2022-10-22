@@ -7,7 +7,7 @@ import time
 import microcontroller
 
 try:
-	from secrets import secrets
+	from secrets.jni_secrets import secrets
 except ImportError:
 	print("WiFi secrets are kept in secrets.py, please add them there!")
 	raise
