@@ -1,0 +1,40 @@
+# circup install adafruit_st7789
+# circup install adafruit_display_text
+
+import board
+import terminalio
+import displayio
+
+# import digitalio
+from adafruit_st7789 import ST7789
+from adafruit_display_text import bitmap_label, wrap_text_to_pixels
+
+
+def main() -> None:
+    # Release any resources currently in use for the displays
+    displayio.release_displays()
+
+    spi = board.SPI()
+    tft_cs = board.TFT_CS  # type: ignore
+    tft_dc = board.TFT_DC  # type: ignore
+
+    display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs)
+    display = ST7789(
+        display_bus, rotation=270, width=240, height=135, rowstart=40, colstart=53
+    )
+
+    text = "This is an extremely long text that needs to be wrapped to be shown."
+    text_area = bitmap_label.Label(terminalio.FONT)
+    text_area.text = "\n".join(
+        wrap_text_to_pixels(text, display.width, terminalio.FONT)
+    )
+    text_area.x = 10
+    text_area.y = 20
+    display.show(text_area)
+
+    while True:
+        pass
+
+
+if __name__ == "__main__":
+    main()
