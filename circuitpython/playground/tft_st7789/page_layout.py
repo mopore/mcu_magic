@@ -1,6 +1,6 @@
 # circup install adafruit_st7789
 # circup install adafruit_display_text
-# circup install adafruit_display_layout
+# circup install adafruit_displayio_layout
 
 import time
 import board
@@ -11,7 +11,6 @@ import displayio
 from adafruit_st7789 import ST7789
 from adafruit_display_text import bitmap_label
 from adafruit_displayio_layout.layouts.page_layout import PageLayout
-
 
 
 def main() -> None:
