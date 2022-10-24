@@ -87,6 +87,7 @@ def main() -> None:
 	print(f"The current time is {datetime.now().isoformat()}")
 	connect_wifi()
 	print(f"The new current time is {datetime.now().isoformat()}")
+	# Testing a second call of connect_wifi to see if returned session is useable.
 	session = connect_wifi()
 	TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
 	text_to_show = session.get(TEXT_URL).text
