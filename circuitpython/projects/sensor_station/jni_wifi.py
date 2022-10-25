@@ -15,7 +15,7 @@ except ImportError:
 	raise
 
 
-def connect_wifi() -> adafruit_requests.Session:
+def connect_wifi(sync_time=True) -> adafruit_requests.Session:
 	http_session: adafruit_requests.Session | None = None
 	if wifi.radio.ap_info is not None:
 		print("Already connected!")
@@ -45,35 +45,35 @@ def connect_wifi() -> adafruit_requests.Session:
 		print(f"Could not connect to Wifi afer {attempts_counter} attempts!")
 		wifi.radio.enabled = False
 		raise ConnectionError()
-
-	# Syncing time
 	pool = socketpool.SocketPool(wifi.radio)
 	http_session = adafruit_requests.Session(pool, ssl.create_default_context())
-	try:
-		print("Connecting to time server...")
-		aio_username = secrets["aio_username"]
-		aio_key = secrets["aio_key"]
-		location = "UTC"
-		TIME_URL = "https://io.adafruit.com/api/v2/%s/integrations/time/struct?x-aio-key=%s&tz=%s" % (aio_username, aio_key, location)
-		json_response = http_session.get(TIME_URL).json()
-		t = time.struct_time(
-			(
-				json_response["year"],
-				json_response["mon"],
-				json_response["mday"],
-				json_response["hour"],
-				json_response["min"],
-				json_response["sec"],
-				json_response["wday"],
-				-1,
-				-1,
+
+	if sync_time is True:
+		try:
+			print("Connecting to time server...")
+			aio_username = secrets["aio_username"]
+			aio_key = secrets["aio_key"]
+			location = "UTC"
+			TIME_URL = "https://io.adafruit.com/api/v2/%s/integrations/time/struct?x-aio-key=%s&tz=%s" % (aio_username, aio_key, location)
+			json_response = http_session.get(TIME_URL).json()
+			t = time.struct_time(
+				(
+					json_response["year"],
+					json_response["mon"],
+					json_response["mday"],
+					json_response["hour"],
+					json_response["min"],
+					json_response["sec"],
+					json_response["wday"],
+					-1,
+					-1,
+				)
 			)
-		)
-		r = rtc.RTC()
-		r.datetime = t
-		print("Time synced.")
-	except Exception as e:
-		print(f"Error syncing time from adafruit.io: {e}")
+			r = rtc.RTC()
+			r.datetime = t
+			print("Time synced.")
+		except Exception as e:
+			print(f"Error syncing time from adafruit.io: {e}")
 	return http_session
 
 
@@ -87,6 +87,7 @@ def main() -> None:
 	print(f"The current time is {datetime.now().isoformat()}")
 	connect_wifi()
 	print(f"The new current time is {datetime.now().isoformat()}")
+	# Testing a second call of connect_wifi to see if returned session is useable.
 	session = connect_wifi()
 	TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
 	text_to_show = session.get(TEXT_URL).text
