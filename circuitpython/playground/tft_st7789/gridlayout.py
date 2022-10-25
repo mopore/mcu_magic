@@ -39,7 +39,7 @@ def main() -> None:
         text = f"Item No. {i+1}"
         label = create_text_label(text)
         grid_layout.add_content(label, (0, i), cell_size=(1, 1))
-    
+
     main_group.append(grid_layout)    
     
     display.show(main_group)
