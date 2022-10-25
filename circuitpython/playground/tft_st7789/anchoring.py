@@ -4,6 +4,7 @@
 import board
 import terminalio
 import displayio
+import time
 
 # import digitalio
 from adafruit_st7789 import ST7789
@@ -23,14 +24,23 @@ def main() -> None:
         display_bus, rotation=270, width=240, height=135, rowstart=40, colstart=53
     )
 
-    text = "Bottom right"
+    counter = 0
+    standard_text = "Bottom right: "
+    text = f"{standard_text}{counter}"
     text_area = bitmap_label.Label(terminalio.FONT, text=text)
     text_area.anchor_point = (1.0, 1.0)  # Grapping the label on the bottom right
     text_area.anchored_position = (display.width, display.height)
     display.show(text_area)
 
+    last_change = 0
+    CHANGE_RATE_SECS = 1
     while True:
-        pass
+        now = time.monotonic()
+        time_passed = now - last_change
+        if time_passed > CHANGE_RATE_SECS:
+            counter += 1
+            text_area.text = f"{standard_text}{counter}"
+            last_change = now
 
 
 if __name__ == "__main__":
