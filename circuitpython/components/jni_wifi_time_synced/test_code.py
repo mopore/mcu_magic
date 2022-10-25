@@ -8,7 +8,7 @@ def main() -> None:
 	print(f"The current time is {datetime.now().isoformat()}")
 	jni_wifi.connect_wifi()
 	print(f"The new current time is {datetime.now().isoformat()}")
-	session = jni_wifi.connect_wifi()
+	session = jni_wifi.connect_wifi(sync_time=False)
 	TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
 	text_to_show = session.get(TEXT_URL).text
 	print(f"Text: {text_to_show}")
