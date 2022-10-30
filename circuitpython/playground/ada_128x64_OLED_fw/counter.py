@@ -6,7 +6,7 @@
 import board
 import displayio
 import terminalio
-import time
+# import time
 
 # can try import bitmap_label below for alternative
 from adafruit_display_text import label
