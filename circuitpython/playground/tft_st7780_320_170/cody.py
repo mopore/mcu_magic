@@ -23,7 +23,7 @@ def main() -> None:
 	# Adafruit Feather names
 	# tft_cs = board.D5
 	# tft_dc = board.D6
-	## tft_rst = board.D9
+	# # tft_rst = board.D9
 	# UM Feather S3 names
 	tft_cs = board.IO33  # type: ignore
 	tft_dc = board.IO38  # type: ignore
