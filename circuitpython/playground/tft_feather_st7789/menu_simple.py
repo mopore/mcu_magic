@@ -27,8 +27,8 @@ def main() -> None:
         display_bus, rotation=270, width=240, height=135, rowstart=40, colstart=53
     )
 
-    font_file_24 = "fonts/RobotoCondensed-Regular-24.pcf"
-    custom_font_36 = bitmap_font.load_font(font_file_24)
+    font_file = "fonts/RobotoCondensed-Regular-24.pcf"
+    custom_font = bitmap_font.load_font(font_file)
 
     main_group = displayio.Group()
 
@@ -42,7 +42,7 @@ def main() -> None:
     first_group = displayio.Group()
     first_group.x = x
     first_group.y = y
-    first_label = bitmap_label.Label(custom_font_36, text="First")
+    first_label = bitmap_label.Label(custom_font, text="First")
     first_group.append(first_label)
     main_group.append(first_group)
     areas.append(first_label)
@@ -51,7 +51,7 @@ def main() -> None:
     second_group = displayio.Group()
     second_group.x = x
     second_group.y = y
-    second_label = bitmap_label.Label(custom_font_36, text="Second")
+    second_label = bitmap_label.Label(custom_font, text="Second")
     second_group.append(second_label)
     main_group.append(second_group)
     areas.append(second_label)
@@ -60,7 +60,7 @@ def main() -> None:
     third_group = displayio.Group()
     third_group.x = x
     third_group.y = y
-    third_label = bitmap_label.Label(custom_font_36, text="Third")
+    third_label = bitmap_label.Label(custom_font, text="Third")
     third_group.append(third_label)
     main_group.append(third_group)
     areas.append(third_label)
@@ -69,7 +69,7 @@ def main() -> None:
     fourth_group = displayio.Group()
     fourth_group.x = x
     fourth_group.y = y
-    fourth_label = bitmap_label.Label(custom_font_36, text="Fourth")
+    fourth_label = bitmap_label.Label(custom_font, text="Fourth")
     fourth_group.append(fourth_label)
     main_group.append(fourth_group)
     areas.append(fourth_label)
@@ -78,7 +78,7 @@ def main() -> None:
     fith_group = displayio.Group()
     fith_group.x = x
     fith_group.y = y
-    fith_label = bitmap_label.Label(custom_font_36, text="Fith")
+    fith_label = bitmap_label.Label(custom_font, text="Fith")
     fith_group.append(fith_label)
     main_group.append(fith_group)
     areas.append(fith_label)
