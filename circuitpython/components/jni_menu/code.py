@@ -54,6 +54,7 @@ class MenuItem():
 
 
 class JniMenu():
+	INIT_INDICES = (-1, -1, -1)
 	BRIGHT = 0xFFFFFF
 	DARK = 0x000000
 	UPDATE_FREQ = 1
@@ -65,9 +66,9 @@ class JniMenu():
 		menu_items: list[MenuItem],
 		row_height: int,
 	) -> None:
-		self.selected_level = -1
-		self.selected_indeces = [-1, -1, -1, -1, -1]
-		self.menu_items = menu_items
+		self.selected_indeces = self.INIT_INDICES
+		self.root_menu = MenuItem("root", menu_items)
+		self.current_parent_menu = self.root_menu
 		self.row_height = row_height
 		self.display = display
 		font_file = "fonts/RobotoCondensed-Regular-16.pcf"
@@ -75,7 +76,7 @@ class JniMenu():
 
 		self.main_group = displayio.Group()
 		self._create_menu(menu_items, self.main_group)
-		self._select_item(0, [0, -1, -1, -1, -1])
+		self._switch_item((0, -1, -1))
 		display.show(self.main_group)	
 		self.navigation = ButtonNavigation(
 			self.on_navi_up,
@@ -87,24 +88,39 @@ class JniMenu():
 		self.navigation.tick()
 	
 	def on_navi_up(self) -> None:
-		print("Up")
-		new_indeces = list(self.selected_indeces)
-		new_index = new_indeces[self.selected_level]
+		current_level = self._determine_level(self.selected_indeces)
+		new_index = self.selected_indeces[current_level]
 		new_index -= 1
 		if new_index >= 0:
-			new_indeces[self.selected_level] = new_index
-			self._select_item(self.selected_level, new_indeces)
+			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
+			self._switch_item(new_indices)
 
 	def on_navi_select(self) -> None:
 		print("Select")
 
 	def on_navi_down(self) -> None:
-		print("Down")
-		new_indeces = list(self.selected_indeces)
-		new_index = new_indeces[self.selected_level]
+		current_level = self._determine_level(self.selected_indeces)
+		new_index = self.selected_indeces[current_level]
 		new_index += 1
-		new_indeces[self.selected_level] = new_index
-		self._select_item(self.selected_level, new_indeces)
+		if new_index < len(self.current_parent_menu.children):
+			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
+			self._switch_item(new_indices)
+		# if new_index > 2:
+		# 	self.main_group.y -= self.row_height
+
+	def _determine_level(self, indices: tuple) -> int:
+		level = -1
+		for v in indices:
+			if v >= 0:
+				level += 1
+			else:
+				break
+		return level
+	
+	def _update_indices(self, old_indices: tuple, level: int, new_index: int) -> tuple:
+		new_indices_list = list(old_indices)
+		new_indices_list[level] = new_index
+		return tuple(new_indices_list)
 
 	def _create_menu(self, menu_items: list[MenuItem], group: displayio.Group) -> None:
 		y = - (self.row_height // 2)
@@ -120,8 +136,9 @@ class JniMenu():
 				# TODO Implement sub menus
 				raise Exception("not yet implemented!")
 	
-	def _find_item(self, selected_level: int, indeces: list) -> MenuItem:
-		current_children = self.menu_items
+	def _find_item(self, indeces: tuple) -> MenuItem:
+		current_children = self.current_parent_menu.children
+		selected_level = self._determine_level(self.selected_indeces)
 		for current_level in range(selected_level + 1):
 			current_index = indeces[current_level]
 			if current_level == selected_level:
@@ -131,8 +148,9 @@ class JniMenu():
 				current_children = new_children
 		raise Exception(f"Could not find an item for level {selected_level} and indeces {indeces}")
 	
-	def _find_group(self, selected_level: int, indeces: list) -> displayio.Group:
+	def _find_group(self, indeces: tuple) -> displayio.Group:
 		current_group = self.main_group
+		selected_level = self._determine_level(self.selected_indeces)
 		for current_level in range(selected_level + 1):
 			current_index = indeces[current_level]
 			if current_level == selected_level:
@@ -143,21 +161,20 @@ class JniMenu():
 				raise Exception("Not yet implemented")
 		raise Exception(f"Could not find a group for level {selected_level} and indeces {indeces}")
 	
-	def _select_item(self, new_level: int, new_indeces: list) -> None:
-		if self.selected_level >= 0:
-			item = self._find_item(self.selected_level, self.selected_indeces)
+	def _switch_item(self, new_indeces: tuple) -> None:
+		if self.selected_indeces != self.INIT_INDICES:
+			item = self._find_item(self.selected_indeces)
 			item.selected = False
-			group = self._find_group(self.selected_level, self.selected_indeces)
+			group = self._find_group(self.selected_indeces)
 			text_label: bitmap_label.Label = group[0]  # type: ignore
 			text_label.color = self.BRIGHT
 			text_label.background_color = self.DARK
 
-		self.selected_level = new_level
 		self.selected_indeces = new_indeces
 
-		item = self._find_item(self.selected_level, self.selected_indeces)
+		item = self._find_item(self.selected_indeces)
 		item.selected = True
-		group = self._find_group(self.selected_level, self.selected_indeces)
+		group = self._find_group(self.selected_indeces)
 		text_label: bitmap_label.Label = group[0]  # type: ignore
 		text_label.color = self.DARK
 		text_label.background_color = self.BRIGHT
