@@ -96,6 +96,13 @@ class JniMenu():
 		if new_index >= 0:
 			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
 			self._switch_item(new_indices)
+			space_to_top = self._space_to_top(new_index)
+			if space_to_top < 0:
+				jump_up_amount = self.row_height
+				if new_index == 0:
+					jump_up_amount = self.row_height
+				self.main_group.y += jump_up_amount
+				space_to_top = self._space_to_top(new_index)
 
 	def on_navi_select(self) -> None:
 		print("Select")
@@ -104,11 +111,23 @@ class JniMenu():
 		current_level = self._determine_level(self.selected_indeces)
 		new_index = self.selected_indeces[current_level]
 		new_index += 1
-		if new_index < len(self.current_parent_menu.children):
+		not_overreached = new_index < len(self.current_parent_menu.children)
+		if not_overreached:
 			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
 			self._switch_item(new_indices)
-		# if new_index > 2:
-		# 	self.main_group.y -= self.row_height
+			space_to_bottom = self._space_to_bottom(new_index)
+			if space_to_bottom < (self.row_height // 3):
+				self.main_group.y -= self.row_height
+				space_to_bottom = self._space_to_bottom(new_index)
+
+	def _space_to_bottom(self, new_index: int) -> int:
+		space_needed = (new_index + 1) * self.row_height  
+		space_available = (self.main_group.y * -1) + self.display.height
+		return space_available - space_needed
+
+	def _space_to_top(self, new_index: int) -> int:
+		space_to_top = (new_index * self.row_height) - (self.main_group.y * -1) 
+		return space_to_top
 
 	def _determine_level(self, indices: tuple) -> int:
 		level = -1
@@ -200,6 +219,9 @@ def create_menu_tree() -> list[MenuItem]:
 		MenuItem("Two"),
 		MenuItem("Three"),
 		MenuItem("Four"),
+		MenuItem("Five"),
+		MenuItem("Six"),
+		MenuItem("Seven"),
 	]
 
 
@@ -207,7 +229,7 @@ def main() -> None:
 	print("Starting demo...")
 	display = create_i2c_oled_display()
 	menu_tree = create_menu_tree()
-	menu = JniMenu(display, menu_tree, 20)
+	menu = JniMenu(display, menu_tree, 18)
 	while True:
 		menu.tick()
 
