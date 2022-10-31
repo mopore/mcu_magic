@@ -47,8 +47,10 @@ class ButtonNavigation():
 
 class MenuItem():
 
-	def __init__(self, text: str, childs=[]) -> None:
+	def __init__(self, text: str, childs=None) -> None:
 		self.text = text
+		if childs is None:
+			childs = []
 		self.children: list[MenuItem] = childs
 		self.selected = False
 
