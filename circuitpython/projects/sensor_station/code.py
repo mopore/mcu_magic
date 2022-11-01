@@ -26,11 +26,10 @@ def main() -> None:
 		features_airquality = station.provides_air_quality()
 
 		if features_airquality:
-			print("Station should be: broombed")
-			# TODO Set station name
+			station_name = "broombed"
 		else:
-			print("Station should be: livingtv")
 			station_name = "livingtv"
+		print(f"Using the following name: {station_name}")
 
 		# Use the console data viewer to output the collected data to the console...
 		handlers.append(ConsoleDataHandler())
