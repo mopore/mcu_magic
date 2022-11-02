@@ -20,15 +20,16 @@ def main() -> None:
 	LED_ORANGE = (255, 165, 0)
 
 	handlers: list[DataHandler] = []
-	station_name = f"teststation{time.time()}"
+	now = time.time()
+	station_name = f"teststation{now}"
 	try:
 		station = SensorStation()
 		features_airquality = station.provides_air_quality()
 
 		if features_airquality:
-			station_name = "broombed"
+			station_name = "broombed{now}"
 		else:
-			station_name = "livingtv"
+			station_name = "livingtv{now}"
 		print(f"Using the following name: {station_name}")
 
 		# Use the console data viewer to output the collected data to the console...
