@@ -84,8 +84,9 @@ class MqttBridge:
 				# print(f"Connection attempt No. {connection_attempts}")	
 				if self.mqtt_client is None:
 					pool = socketpool.SocketPool(wifi.radio)
+					now = time.time()
 					self.mqtt_client = mqtt.MQTT(
-						client_id=f"{self.station_name}{time.time()}",
+						client_id=f"{self.station_name}{now}",
 						broker=self.MQTT_SERVER_IP, 
 						socket_pool=pool,
 						is_ssl=False,
