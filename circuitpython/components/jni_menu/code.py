@@ -53,6 +53,7 @@ class MenuItem():
 			childs = []
 		self.children: list[MenuItem] = childs
 		self.selected = False
+		self.main_y = 0
 
 
 class JniMenu():
@@ -96,16 +97,13 @@ class JniMenu():
 		if new_index >= 0:
 			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
 			self._switch_item(new_indices)
-			space_to_top = self._space_to_top(new_index)
-			if space_to_top < 0:
+			move_group_criteria = self._space_to_top(new_index) < 0
+			if move_group_criteria: 
 				jump_up_amount = self.row_height
 				if new_index == 0:
 					jump_up_amount = self.row_height
 				self.main_group.y += jump_up_amount
-				space_to_top = self._space_to_top(new_index)
-
-	def on_navi_select(self) -> None:
-		print("Select")
+				self.current_parent_menu.main_y = self.main_group.y
 
 	def on_navi_down(self) -> None:
 		current_level = self._determine_level(self.selected_indeces)
@@ -116,9 +114,13 @@ class JniMenu():
 			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
 			self._switch_item(new_indices)
 			space_to_bottom = self._space_to_bottom(new_index)
-			if space_to_bottom < (self.row_height // 3):
+			move_group_criteria = space_to_bottom < (self.row_height // 3)
+			if move_group_criteria:
 				self.main_group.y -= self.row_height
-				space_to_bottom = self._space_to_bottom(new_index)
+				self.current_parent_menu.main_y = self.main_group.y
+
+	def on_navi_select(self) -> None:
+		print("Select")
 
 	def _space_to_bottom(self, new_index: int) -> int:
 		space_needed = (new_index + 1) * self.row_height  
