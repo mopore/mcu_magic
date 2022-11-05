@@ -120,7 +120,8 @@ class JniMenu():
 				self.current_parent_menu.main_y = self.main_group.y
 
 	def on_navi_select(self) -> None:
-		print("Select")
+		selected_item = self._find_item(self.selected_indeces)
+		print(f"Selected: {selected_item.text}")
 
 	def _space_to_bottom(self, new_index: int) -> int:
 		space_needed = (new_index + 1) * self.row_height  
@@ -157,6 +158,7 @@ class JniMenu():
 			group.append(item_group)
 			if len(item.children) > 0:
 				# TODO Implement sub menus
+				# TODO Add a back option "<<<"
 				raise Exception("not yet implemented!")
 	
 	def _find_item(self, indeces: tuple) -> MenuItem:
