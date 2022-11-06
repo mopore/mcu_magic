@@ -8,6 +8,7 @@ from digitalio import DigitalInOut, Pull
 from adafruit_display_text import bitmap_label
 from adafruit_bitmap_font import bitmap_font
 import adafruit_displayio_sh1107
+import terminalio
 
 
 class ButtonNavigation():
@@ -45,15 +46,24 @@ class ButtonNavigation():
 				self.button_down = False
 
 
-class MenuItem():
+class JniMenuItem():
 
-	def __init__(self, text: str, childs=None) -> None:
+	BACK_ITEM_TEXT = "<<"
+
+	def __init__(self, text: str | None, childs=None, cb=None, back_item=False) -> None:
+		""" Set text to None for root element."""
 		self.text = text
-		if childs is None:
-			childs = []
-		self.children: list[MenuItem] = childs
+		self.cb = cb
 		self.selected = False
 		self.main_y = 0
+		self.is_back_item = back_item
+		self.is_root = self.text is None
+		if childs is None:
+			childs = []
+		if len(childs) > 0 and not self.is_root:
+			back_item = JniMenuItem(self.BACK_ITEM_TEXT, back_item=True)
+			childs.insert(0, back_item)
+		self.children: list[JniMenuItem] = childs
 
 
 class JniMenu():
@@ -66,21 +76,21 @@ class JniMenu():
 	def __init__(
 		self, 
 		display: displayio.Display, 
-		menu_items: list[MenuItem],
+		menu_items: list[JniMenuItem],
 		row_height: int,
 	) -> None:
 		self.selected_indeces = self.INIT_INDICES
-		self.root_menu = MenuItem("root", menu_items)
+		self.root_menu = JniMenuItem(text=None, childs=menu_items)
 		self.current_parent_menu = self.root_menu
 		self.row_height = row_height
 		self.display = display
 		font_file = "fonts/RobotoCondensed-Regular-16.pcf"
 		self.custom_font = bitmap_font.load_font(font_file)
 
-		self.main_group = displayio.Group()
-		self._create_menu(menu_items, self.main_group)
-		self._switch_item((0, -1, -1))
-		display.show(self.main_group)	
+		self.main_dgroup = displayio.Group()
+		self._build_dgroup(self.root_menu, self.main_dgroup)
+		self._update_selection((0, -1, -1))
+		display.show(self.main_dgroup)	
 		self.navigation = ButtonNavigation(
 			self.on_navi_up,
 			self.on_navi_down,
@@ -95,15 +105,15 @@ class JniMenu():
 		new_index = self.selected_indeces[current_level]
 		new_index -= 1
 		if new_index >= 0:
-			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
-			self._switch_item(new_indices)
+			new_indices = self._new_indices(self.selected_indeces, current_level, new_index)
+			self._update_selection(new_indices)
 			move_group_criteria = self._space_to_top(new_index) < 0
 			if move_group_criteria: 
 				jump_up_amount = self.row_height
 				if new_index == 0:
 					jump_up_amount = self.row_height
-				self.main_group.y += jump_up_amount
-				self.current_parent_menu.main_y = self.main_group.y
+				self.main_dgroup.y += jump_up_amount
+				self.current_parent_menu.main_y = self.main_dgroup.y
 
 	def on_navi_down(self) -> None:
 		current_level = self._determine_level(self.selected_indeces)
@@ -111,25 +121,49 @@ class JniMenu():
 		new_index += 1
 		not_overreached = new_index < len(self.current_parent_menu.children)
 		if not_overreached:
-			new_indices = self._update_indices(self.selected_indeces, current_level, new_index)
-			self._switch_item(new_indices)
+			new_indices = self._new_indices(self.selected_indeces, current_level, new_index)
+			self._update_selection(new_indices)
 			space_to_bottom = self._space_to_bottom(new_index)
 			move_group_criteria = space_to_bottom < (self.row_height // 3)
 			if move_group_criteria:
-				self.main_group.y -= self.row_height
-				self.current_parent_menu.main_y = self.main_group.y
+				self.main_dgroup.y -= self.row_height
+				self.current_parent_menu.main_y = self.main_dgroup.y
 
 	def on_navi_select(self) -> None:
 		selected_item = self._find_item(self.selected_indeces)
 		print(f"Selected: {selected_item.text}")
+		if selected_item.cb is not None:
+			selected_item.cb()
+		# Move into sub menu
+		if len(selected_item.children) > 0:
+			print("Going into sub menu...")
+			self.current_parent_menu = selected_item
+			# TODO Check if self.main_dgroup must me passed...
+			self._build_dgroup(selected_item, self.main_dgroup)
+			level = self._determine_level(self.selected_indeces)
+			level += 1
+			new_index = 0
+			new_indices = self._new_indices(self.selected_indeces, level, new_index)
+			self._update_selection(new_indices)
+		elif selected_item.is_back_item:
+			# Move back...
+			print("Going back")
+			level = self._determine_level(self.selected_indeces)
+			level -= 1
+			new_indices = self._new_indices(self.selected_indeces, level)
+			new_selected_item = self._find_item_parent(new_indices)
+			self.current_parent_menu = new_selected_item
+			print(f"Name of current parent menu: {self.current_parent_menu.text}")
+			self._build_dgroup(new_selected_item, self.main_dgroup)
+			self._update_selection(new_indices)
 
 	def _space_to_bottom(self, new_index: int) -> int:
 		space_needed = (new_index + 1) * self.row_height  
-		space_available = (self.main_group.y * -1) + self.display.height
+		space_available = (self.main_dgroup.y * -1) + self.display.height
 		return space_available - space_needed
 
 	def _space_to_top(self, new_index: int) -> int:
-		space_to_top = (new_index * self.row_height) - (self.main_group.y * -1) 
+		space_to_top = (new_index * self.row_height) - (self.main_dgroup.y * -1) 
 		return space_to_top
 
 	def _determine_level(self, indices: tuple) -> int:
@@ -141,28 +175,34 @@ class JniMenu():
 				break
 		return level
 	
-	def _update_indices(self, old_indices: tuple, level: int, new_index: int) -> tuple:
+	def _new_indices(self, old_indices: tuple, level: int, new_index: int | None = None) -> tuple:
 		new_indices_list = list(old_indices)
-		new_indices_list[level] = new_index
+		if new_index is None:
+			# Set all indeces after current level to -1
+			for i in range(level + 1, len(new_indices_list)):
+				new_indices_list[i] = -1
+		else:
+			new_indices_list[level] = new_index
+
 		return tuple(new_indices_list)
 
-	def _create_menu(self, menu_items: list[MenuItem], group: displayio.Group) -> None:
+	def _build_dgroup(self, menu_item: JniMenuItem, group: displayio.Group) -> None:
 		y = - (self.row_height // 2)
-		for item in menu_items:
+		while (len(group) > 0):
+			group.pop()
+		for item in menu_item.children:
 			item_group = displayio.Group()
-			text_label = bitmap_label.Label(self.custom_font, text=item.text)
+			# text_label = bitmap_label.Label(self.custom_font, text=item.text)
+			text_label = bitmap_label.Label(terminalio.FONT, text=item.text)
 			item_group.x = self.X_START
 			y += self.row_height
 			item_group.y = y
 			item_group.append(text_label)
 			group.append(item_group)
-			if len(item.children) > 0:
-				# TODO Implement sub menus
-				# TODO Add a back option "<<<"
-				raise Exception("not yet implemented!")
+		group.y = menu_item.main_y
 	
-	def _find_item(self, indeces: tuple) -> MenuItem:
-		current_children = self.current_parent_menu.children
+	def _find_item(self, indeces: tuple) -> JniMenuItem:
+		current_children = self.root_menu.children
 		selected_level = self._determine_level(self.selected_indeces)
 		for current_level in range(selected_level + 1):
 			current_index = indeces[current_level]
@@ -173,34 +213,38 @@ class JniMenu():
 				current_children = new_children
 		raise Exception(f"Could not find an item for level {selected_level} and indeces {indeces}")
 	
-	def _find_group(self, indeces: tuple) -> displayio.Group:
-		current_group = self.main_group
-		selected_level = self._determine_level(self.selected_indeces)
-		for current_level in range(selected_level + 1):
-			current_index = indeces[current_level]
-			if current_level == selected_level:
-				group = current_group[current_index]
-				return group  # type: ignore
+	def _find_item_parent(self, indeces: tuple) -> JniMenuItem:
+		current_parent = self.root_menu
+		target_level = self._determine_level(indeces)
+		print(f"Searching for parent for {indeces} in level {target_level}")
+		for current_level in range(target_level + 1):
+			if current_level == target_level:
+				return current_parent
 			else:
-				# TODO Implement sub menus
-				raise Exception("Not yet implemented")
-		raise Exception(f"Could not find a group for level {selected_level} and indeces {indeces}")
-	
-	def _switch_item(self, new_indeces: tuple) -> None:
-		if self.selected_indeces != self.INIT_INDICES:
+				current_index = indeces[current_level]
+				current_parent = current_parent.children[current_index]
+		raise Exception(f"Could not find the parent item for level {target_level} and indeces {indeces}")
+		
+	def _update_selection(self, new_indeces: tuple) -> None:
+		# print(f"Old selection: {self.selected_indeces}")
+		old_level = self._determine_level(self.selected_indeces)
+		old_index = self.selected_indeces[old_level]
+		# print(f"Old level #{old_level}, old index #{old_index}")
+		if old_index >= 0:
 			item = self._find_item(self.selected_indeces)
 			item.selected = False
-			group = self._find_group(self.selected_indeces)
-			text_label: bitmap_label.Label = group[0]  # type: ignore
-			text_label.color = self.BRIGHT
-			text_label.background_color = self.DARK
-
+			if old_index < len(self.main_dgroup):
+				text_label: bitmap_label.Label = self.main_dgroup[old_index][0]  # type: ignore
+				text_label.color = self.BRIGHT
+				text_label.background_color = self.DARK
+		# print(f"New selection: {new_indeces}")
 		self.selected_indeces = new_indeces
-
+		new_level = self._determine_level(self.selected_indeces)
+		new_index = self.selected_indeces[new_level]
+		# print(f"New level #{new_level}, new index #{new_index}")
 		item = self._find_item(self.selected_indeces)
 		item.selected = True
-		group = self._find_group(self.selected_indeces)
-		text_label: bitmap_label.Label = group[0]  # type: ignore
+		text_label: bitmap_label.Label = self.main_dgroup[new_index][0]  # type: ignore
 		text_label.color = self.DARK
 		text_label.background_color = self.BRIGHT
 
@@ -217,15 +261,23 @@ def create_i2c_oled_display() -> displayio.Display:
 	return display
 
 
-def create_menu_tree() -> list[MenuItem]:
+def create_menu_tree() -> list[JniMenuItem]:
 	return [
-		MenuItem("One"),
-		MenuItem("Two"),
-		MenuItem("Three"),
-		MenuItem("Four"),
-		MenuItem("Five"),
-		MenuItem("Six"),
-		MenuItem("Seven"),
+		JniMenuItem("Action", cb=lambda: print("ACTION!!!")),
+		JniMenuItem("Sub Menu 1", childs=[
+			JniMenuItem("Action 1", cb=lambda: print("Hello from sub menu 1"))
+		]),
+		JniMenuItem("Three"),
+		JniMenuItem("Four"),
+		JniMenuItem("Five"),
+		JniMenuItem("Six"),
+		JniMenuItem("Seven"),
+		JniMenuItem("Sub Menu 2", childs=[
+			JniMenuItem("Action 2", cb=lambda: print("Hello from sub menu 2")),
+			JniMenuItem("Sub Sub Menu 3", childs=[
+				JniMenuItem("Action 3", cb=lambda: print("ACTION 3!!!")),
+			])
+		]),
 	]
 
 
@@ -233,7 +285,7 @@ def main() -> None:
 	print("Starting demo...")
 	display = create_i2c_oled_display()
 	menu_tree = create_menu_tree()
-	menu = JniMenu(display, menu_tree, 18)
+	menu = JniMenu(display, menu_tree, 14)
 	while True:
 		menu.tick()
 
