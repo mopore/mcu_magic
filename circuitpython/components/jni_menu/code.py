@@ -11,13 +11,28 @@ import adafruit_displayio_sh1107
 import terminalio
 
 
+class ButtonListener():
+
+	def on_navi_up(self):
+		...
+
+	def on_navi_down(self):
+		...
+
+	def on_navi_select(self):
+		...
+
+
 class ButtonNavigation():
+
+	def tick(self):
+		...
+
+
+class OledButtonNavigation(ButtonNavigation):
 
 	def __init__(
 		self,
-		up_cb,
-		down_cb,
-		select_cb,
 	) -> None:
 		self.button_a = DigitalInOut(board.D9)
 		self.button_a.switch_to_input(pull=Pull.UP)
@@ -26,20 +41,21 @@ class ButtonNavigation():
 		self.button_c = DigitalInOut(board.D5)
 		self.button_c.switch_to_input(pull=Pull.UP)
 		self.button_down = False
-		self.up_cb = up_cb
-		self.down_cb = down_cb
-		self.select_cb = select_cb
+		self.listener: ButtonListener | None = None
 	
 	def tick(self) -> None:
 		if not self.button_down:
 			if not self.button_a.value:
-				self.up_cb()	
+				if self.listener is not None:
+					self.listener.on_navi_up()
 				self.button_down = True
 			elif not self.button_b.value:
-				self.select_cb()
+				if self.listener is not None:
+					self.listener.on_navi_select()
 				self.button_down = True
 			elif not self.button_c.value:
-				self.down_cb()
+				if self.listener is not None:
+					self.listener.on_navi_down()
 				self.button_down = True
 		else:
 			if self.button_a.value and self.button_b.value and self.button_c.value:
@@ -66,7 +82,7 @@ class JniMenuItem():
 		self.children: list[JniMenuItem] = childs
 
 
-class JniMenu():
+class JniMenu(ButtonListener):
 	INIT_INDICES = (-1, -1, -1)
 	BRIGHT = 0xFFFFFF
 	DARK = 0x000000
@@ -75,9 +91,10 @@ class JniMenu():
 
 	def __init__(
 		self, 
+		button_navigation: ButtonNavigation,
 		display: displayio.Display, 
-		menu_items: list[JniMenuItem],
 		row_height: int,
+		menu_items: list[JniMenuItem],
 		font: bitmap_font.Bitmap | None = None
 	) -> None:
 		self.selected_indeces = self.INIT_INDICES
@@ -92,11 +109,7 @@ class JniMenu():
 		self._build_dgroup(self.root_menu)
 		self._update_selection((0, -1, -1))
 		display.show(self.main_dgroup)	
-		self.navigation = ButtonNavigation(
-			self.on_navi_up,
-			self.on_navi_down,
-			self.on_navi_select,
-		)
+		self.navigation = button_navigation
 
 	def tick(self) -> None:
 		self.navigation.tick()
@@ -275,12 +288,16 @@ def create_menu_tree() -> list[JniMenuItem]:
 
 def main() -> None:
 	print("Starting demo...")
+	button_navigation = OledButtonNavigation()
 	display = create_i2c_oled_display()
 	menu_tree = create_menu_tree()
-	font_file = "fonts/RobotoCondensed-Regular-16.pcf"
+
+	# font_file = "fonts/RobotoCondensed-Regular-16.pcf"
 	# custom_font = bitmap_font.load_font(font_file)
-	# menu = JniMenu(display, menu_tree, 18, font=custom_font)  # type: ignore
-	menu = JniMenu(display, menu_tree, 16)
+	# menu = JniMenu(button_navigation, display, menu_tree, 18, font=custom_font)  # type: ignore
+
+	menu = JniMenu(button_navigation, display, row_height=16, menu_items=menu_tree)
+	button_navigation.listener = menu
 	while True:
 		menu.tick()
 
