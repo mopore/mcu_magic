@@ -52,7 +52,7 @@ class Calibration:
         print(f"X: {self.x_rel}\t\tY: {self.y_rel}")
 
 
-class JniJoyFw():
+class JoyFw():
     
     def __init__(self) -> None:
         i2c_bus = board.I2C()
@@ -118,7 +118,7 @@ class JniJoyFw():
 
 
 def main() -> None:
-    wing = JniJoyFw()
+    wing = JoyFw()
     print("Please move stick or press button.")
 
     while True:
