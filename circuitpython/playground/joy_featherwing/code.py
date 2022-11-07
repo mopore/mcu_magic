@@ -78,7 +78,7 @@ class JoyFw():
         start_y = ss.analog_read(self.STICK_Y)
         self.calib = Calibration(start_x, start_y)
         self.button_down = False
-    
+       
     def tick(self) -> None:
         x = self.ss.analog_read(self.STICK_X)
         y = self.ss.analog_read(self.STICK_Y)
