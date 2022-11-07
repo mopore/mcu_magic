@@ -5,7 +5,8 @@ from digitalio import DigitalInOut, Pull
 def main() -> None:
 	BUTTON_YES = False
 	BUTTON_NO = True
-	internal_button = DigitalInOut(board.BUTTON)  # Adafruit ESP32-S3 Feather
+	# internal_button = DigitalInOut(board.BUTTON)  # Adafruit ESP32-S3 Feather
+	internal_button = DigitalInOut(board.IO0)  # UM Feather S3
 	internal_button.switch_to_input(pull=Pull.UP)
 
 	print("Press the internal button.")
