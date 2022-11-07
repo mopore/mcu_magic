@@ -6,7 +6,31 @@ import os
 from adafruit_seesaw.seesaw import Seesaw
 
 
-class Calibration:
+class JniJoyFwListener():
+    
+    def on_move(self, x: int, y: int) -> None:
+        ...
+    
+    def on_button_a(self) -> None:
+        ...
+
+    def on_button_b(self) -> None:
+        ...
+
+    def on_button_x(self) -> None:
+        ...
+
+    def on_button_y(self) -> None:
+        ...
+
+    def on_button_sel(self) -> None:
+        ...
+
+
+class Calibration(JniJoyFwListener):
+
+    DEADZONE_PERCENT = 20
+    
     def __init__(
         self, 
         start_x: int, 
@@ -36,6 +60,7 @@ class Calibration:
         self.y = start_y
         self.x_rel = 0
         self.y_rel = 0
+        self.calib_mode = False
 
     def update(self, x: int, y: int):
         if (abs(x - self.x) > 3) or (abs(y - self.y) > 3):
@@ -70,7 +95,11 @@ class Calibration:
     def print(self):
         print(f"\tX: {self.x_rel}        \tY: {self.y_rel}    ", end="\r")
 
+    def on_button_a(self) -> None:
+        print(f"Current calibration: {self.x_min}, {self.x_max}, {self.y_min}, {self.y_max}")
+        self.calib_mode = False
 
+        
 class JniJoyFw():
 
     CALIB_FILEPATH = "joy_fw_calibration.txt"
@@ -79,16 +108,16 @@ class JniJoyFw():
         i2c_bus = board.I2C()
         ss = Seesaw(i2c_bus)
 
-        self.BUTTON_RIGHT = 6
-        self.BUTTON_DOWN = 7
-        self.BUTTON_LEFT = 9
-        self.BUTTON_UP = 10
+        self.BUTTON_A = 6
+        self.BUTTON_B = 7
+        self.BUTTON_Y = 9
+        self.BUTTON_X = 10
         self.BUTTON_SEL = 14
         self.BUTTON_MASK = (
-            (1 << self.BUTTON_RIGHT) | 
-            (1 << self.BUTTON_DOWN) | 
-            (1 << self.BUTTON_LEFT) | 
-            (1 << self.BUTTON_UP) | 
+            (1 << self.BUTTON_A) | 
+            (1 << self.BUTTON_B) | 
+            (1 << self.BUTTON_Y) | 
+            (1 << self.BUTTON_X) | 
             (1 << self.BUTTON_SEL)
         )
         self.STICK_X = 3
@@ -99,6 +128,10 @@ class JniJoyFw():
         start_y = ss.analog_read(self.STICK_Y)
         self.calib = Calibration(start_x, start_y)
         self.button_down = False
+        self.listener: None | JniJoyFwListener = None
+    
+    def set_listener(self, listener: None | JniJoyFwListener) -> None:
+        self.listener = listener
 
     def needs_calibration(self) -> bool:
         # TODO Determine if calibration is needed.
@@ -111,53 +144,80 @@ class JniJoyFw():
     
     def calibrate(self) -> None:
         print("Calibrating...")
+        self.listener = self.calib
+        self.calib.calib_mode = True
+        while self.calib.calib_mode:
+            self.tick()
     
     def tick(self) -> None:
         x = self.ss.analog_read(self.STICK_X)
         y = self.ss.analog_read(self.STICK_Y)
         self.calib.update(x, y)
-        self.calib.print()
+        if self.calib.calib_mode:
+            self.calib.print()
+        else:  # Normal mode
+            if (
+                abs(self.calib.x_rel) > Calibration.DEADZONE_PERCENT or
+                abs(self.calib.y_rel) > Calibration.DEADZONE_PERCENT
+            ):
+                self.listener.on_move(self.calib.x_rel, self.calib.y_rel)
 
         buttons = self.ss.digital_read_bulk(self.BUTTON_MASK)
         if not self.button_down:
-            if not buttons & (1 << self.BUTTON_RIGHT):
-                print("Button A pressed")
+            if not buttons & (1 << self.BUTTON_A):
+                if self.listener is not None:
+                    self.listener.on_button_a()
                 self.button_down = True
 
-            if not buttons & (1 << self.BUTTON_DOWN):
-                print("Button B pressed")
+            if not buttons & (1 << self.BUTTON_B):
+                if self.listener is not None:
+                    self.listener.on_button_b()
                 self.button_down = True
 
-            if not buttons & (1 << self.BUTTON_LEFT):
-                print("Button Y pressed")
+            if not buttons & (1 << self.BUTTON_Y):
+                if self.listener is not None:
+                    self.listener.on_button_y()
                 self.button_down = True
 
-            if not buttons & (1 << self.BUTTON_UP):
-                print("Button x pressed")
+            if not buttons & (1 << self.BUTTON_X):
+                if self.listener is not None:
+                    self.listener.on_button_x()
                 self.button_down = True
 
             if not buttons & (1 << self.BUTTON_SEL):
-                print("Button SEL pressed")
+                if self.listener is not None:
+                    self.listener.on_button_sel()
                 self.button_down = True
         else:
             if (
-                buttons & (1 << self.BUTTON_RIGHT) and 
-                buttons & (1 << self.BUTTON_DOWN) and 
-                buttons & (1 << self.BUTTON_LEFT) and 
-                buttons & (1 << self.BUTTON_UP) and 
+                buttons & (1 << self.BUTTON_A) and 
+                buttons & (1 << self.BUTTON_B) and 
+                buttons & (1 << self.BUTTON_Y) and 
+                buttons & (1 << self.BUTTON_X) and 
                 buttons & (1 << self.BUTTON_SEL)
             ):
                 self.button_down = False
 
 
+class NormalListener(JniJoyFwListener):
+    
+    def on_button_a(self) -> None:
+        print("Button A!")
+    
+    def on_move(self, x: int, y: int) -> None:
+        print(f"x: {x}, y: {y}")
+
+
 def main() -> None:
     wing = JniJoyFw()
-    if wing.needs_calibration() is True:
+    if wing.needs_calibration():
         wing.calibrate()
-
+        print("Calibrated.")
+    print("Normal mode...")
+    wing.set_listener(NormalListener())
     while True:
         wing.tick()
-        time.sleep(0.1)
+        # time.sleep(0.1)
 
 
 if __name__ == "__main__":
