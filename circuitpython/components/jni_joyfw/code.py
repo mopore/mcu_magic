@@ -143,7 +143,7 @@ class JniJoyFw():
             return True
     
     def calibrate(self) -> None:
-        print("Calibrating...")
+        print("Calibration: Move stick in all dimensions and press 'A'...")
         self.listener = self.calib
         self.calib.calib_mode = True
         while self.calib.calib_mode:
