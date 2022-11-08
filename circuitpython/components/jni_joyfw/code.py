@@ -3,6 +3,7 @@
 import time
 import board
 import os
+import json
 from adafruit_seesaw.seesaw import Seesaw
 
 
@@ -30,6 +31,7 @@ class JniJoyFwListener():
 class Calibration(JniJoyFwListener):
 
     DEADZONE_PERCENT = 20
+    CALIB_FILEPATH = "joy_fw_calibration.txt"
     
     def __init__(
         self, 
@@ -97,12 +99,18 @@ class Calibration(JniJoyFwListener):
 
     def on_button_a(self) -> None:
         print(f"Current calibration: {self.x_min}, {self.x_max}, {self.y_min}, {self.y_max}")
+        with open(self.CALIB_FILEPATH, "w") as filehandler:
+            json_string = json.dumps({
+                "x_min": self.x_min, 
+                "x_max": self.x_max,
+                "y_min": self.y_min,
+                "y_max": self.y_max})
+            filehandler.write(f"{json_string}")
+            filehandler.close()
         self.calib_mode = False
-
+        
         
 class JniJoyFw():
-
-    CALIB_FILEPATH = "joy_fw_calibration.txt"
     
     def __init__(self) -> None:
         i2c_bus = board.I2C()
@@ -133,14 +141,24 @@ class JniJoyFw():
     def set_listener(self, listener: None | JniJoyFwListener) -> None:
         self.listener = listener
 
-    def needs_calibration(self) -> bool:
-        # TODO Determine if calibration is needed.
+    def read_calibration(self) -> Calibration | None:
         root_content = os.listdir("/")
-        if self.CALIB_FILEPATH in root_content: 
-            print(f"{self.CALIB_FILEPATH} is in {root_content}")
-            return False
+        if Calibration.CALIB_FILEPATH in root_content: 
+            print(f"{Calibration.CALIB_FILEPATH} is in {root_content}")
+            dict_from_json: dict = {}
+            with open(Calibration.CALIB_FILEPATH, "r") as filehandler:
+                content = filehandler.read()
+                dict_from_json = json.loads(content)
+                filehandler.close()
+            x_min: int = dict_from_json["x_min"]
+            x_max: int = dict_from_json["x_max"]
+            y_min: int = dict_from_json["y_min"]
+            y_max: int = dict_from_json["y_max"]
+            calibration = Calibration(start_x=0, start_y=0, x_min=x_min, x_max=x_max, 
+                                      y_min=y_min, y_max=y_max)
+            return calibration
         else:
-            return True
+            return None
     
     def calibrate(self) -> None:
         print("Calibration: Move stick in all dimensions and press 'A'...")
@@ -210,7 +228,10 @@ class NormalListener(JniJoyFwListener):
 
 def main() -> None:
     wing = JniJoyFw()
-    if wing.needs_calibration():
+    calibration = wing.read_calibration()
+    if calibration is not None:
+        wing.calib = calibration
+    else:
         wing.calibrate()
         print("Calibrated.")
     print("Normal mode...")
