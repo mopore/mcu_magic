@@ -101,6 +101,8 @@ class Calibration(JniJoyFwListener):
         print(f"Current calibration: {self.x_min}, {self.x_max}, {self.y_min}, {self.y_max}")
         with open(self.CALIB_FILEPATH, "w") as filehandler:
             json_string = json.dumps({
+                "start_x": self.start_x, 
+                "start_y": self.start_y,
                 "x_min": self.x_min, 
                 "x_max": self.x_max,
                 "y_min": self.y_min,
@@ -150,11 +152,13 @@ class JniJoyFw():
                 content = filehandler.read()
                 dict_from_json = json.loads(content)
                 filehandler.close()
+            start_x: int = dict_from_json["start_x"]
+            start_y: int = dict_from_json["start_y"]
             x_min: int = dict_from_json["x_min"]
             x_max: int = dict_from_json["x_max"]
             y_min: int = dict_from_json["y_min"]
             y_max: int = dict_from_json["y_max"]
-            calibration = Calibration(start_x=0, start_y=0, x_min=x_min, x_max=x_max, 
+            calibration = Calibration(start_x=start_x, start_y=start_y, x_min=x_min, x_max=x_max, 
                                       y_min=y_min, y_max=y_max)
             return calibration
         else:
