@@ -269,7 +269,7 @@ def create_i2c_oled_display() -> displayio.Display:
 def create_menu_tree() -> list[JniMenuItem]:
 	return [
 		JniMenuItem("Action", cb=lambda: print("ACTION!!!")),
-		JniMenuItem("Sub Menu 1", childs=[
+		JniMenuItem("Sub Menu A", childs=[
 			JniMenuItem("Action 1", cb=lambda: print("Hello from sub menu 1"))
 		]),
 		JniMenuItem("Three"),

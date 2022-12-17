@@ -30,7 +30,8 @@ def main():
 	keyboard.release_all()
 	time.sleep(0.5)
 
-	layout.write("Hello")
+	#  layout.write("I like big butts!")
+	layout.write("Test")
 	keyboard.press(Keycode.ENTER)
 	keyboard.release_all()
 	time.sleep(0.5)

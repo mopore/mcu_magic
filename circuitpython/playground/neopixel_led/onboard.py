@@ -21,4 +21,4 @@ print("Firing the NeoPixel...")
 while True:
     for color in colors:
         pixel.fill(color)
-        time.sleep(2)
+        time.sleep(0.2)
