@@ -32,7 +32,7 @@ class MqttDataHandler(DataHandler):
 		self.alive_led_counter = 0
 		self.pixel = pixel
 		self.button = button
-		self.show_led = True
+		self.show_led = False  # Initially there is no blinking to indicate an active connection
 		self.button_ready = True
 
 	def handle(self, sensor_data: SensorData) -> None:
