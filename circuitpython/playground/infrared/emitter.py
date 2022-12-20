@@ -24,11 +24,13 @@ class Emitter():
 
 def main() -> None:
 	emitter = Emitter()
+	print("Emitting...")
+	emitter.emit()
 
-	while True:
-		print("Emitting...")
-		emitter.emit()
-		time.sleep(3)
+	# while True:
+	# 	print("Emitting...")
+	# 	emitter.emit()
+	# 	time.sleep(3)
 
 
 if __name__ == "__main__":
