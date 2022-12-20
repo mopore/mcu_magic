@@ -20,7 +20,7 @@ class InfraredRecoder():
 
 		print("Listening to signals...")
 
-	def tick(self) -> None:
+	def record(self) -> None:
 		length = len(self.pulse_in)
 		if length > 0:
 			if self.last_length == length:
@@ -49,7 +49,7 @@ def main() -> None:
 	recorder = InfraredRecoder()
 
 	while True:
-		recorder.tick()
+		recorder.record()
 
 
 if __name__ == "__main__":
