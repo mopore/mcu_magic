@@ -3,9 +3,6 @@ import board
 import time
 import pulseio
 
-BUTTON_YES = False
-BUTTON_NO = True
-
 
 class InfraredRecoder():
 
