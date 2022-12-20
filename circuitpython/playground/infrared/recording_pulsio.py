@@ -1,6 +1,6 @@
 
 import board
-from digitalio import DigitalInOut, Pull
+import time
 import pulseio
 
 BUTTON_YES = False
@@ -12,43 +12,40 @@ class InfraredRecoder():
 	def __init__(
 		self,
 	) -> None:
-		self.last_tick = 0
+		self.catch_counter = 0
+		self.last_check_time = 0
 		self.button_ready = True
 		self.recording = False
+		self.last_length = 0
 		
 		# Preparing IR receiver
-		self.pulses = pulseio.PulseIn(board.IO6, maxlen=200, idle_state=True)  # type: ignore  
-		self.pulses.pause()
+		self.pulse_in = pulseio.PulseIn(board.IO6, maxlen=1000, idle_state=True)  # type: ignore  
 
-		# Preparing the internal button to start and stop recordings
-		# button = DigitalInOut(board.BUTTON)  # Adafruit ESP32-S3 Feather
-		button = DigitalInOut(board.IO0)  # UM Feather S3
-		button.switch_to_input(pull=Pull.UP)
-		self.button = button
-		print("Press internal button to start recording...")
+		print("Listening to signals...")
 
 	def tick(self) -> None:
-		if self.button_ready:
-			if BUTTON_YES == self.button.value:
-				self.recording = not self.recording
-				self.button_ready = False
-				if self.recording:
-					self.start_recording()
-				else:
-					self.stop_recording()
-		else:
-			if BUTTON_NO == self.button.value:
-				self.button_ready = True
-
-	def start_recording(self) -> None:
-		print("Starting recording...")
-		self.pulses.clear()
-		self.pulses.resume()
-
-	def stop_recording(self) -> None:
-		print("Stopping recording...")
-		self.pulses.pause()
-		print(f"Lenght of recorded pulses: {len(self.pulses)}")
+		length = len(self.pulse_in)
+		if length > 0:
+			if self.last_length == length:
+				now = time.monotonic()
+				time_passed = now - self.last_check_time
+				if time_passed > 1:
+					# More then 1 second the same length of pulses
+					self._handle_yield(length)
+					self.last_length = 0
+			else:
+				self.last_length = length
+				self.last_check_time = time.monotonic()
+	
+	def _handle_yield(self, length: int) -> None:
+		self.catch_counter += 1
+		self.pulse_in.pause()
+		print(f"Received pulses #{self.catch_counter} with a length of {length}:")
+		pulses_list = [self.pulse_in[i] for i in range(length)]
+		print(f"Values: {pulses_list}")
+		self.pulse_in.clear()
+		self.pulse_in.resume()
+		print("\n\nResetting...")
 
 
 def main() -> None:
