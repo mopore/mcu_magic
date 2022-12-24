@@ -25,7 +25,10 @@ class ButtonListener():
 
 class ButtonNavigation():
 
-	def tick(self):
+	def __init__(self) -> None:
+		self.listener: ButtonListener | None = None
+
+	def loop(self):
 		...
 
 
@@ -41,9 +44,8 @@ class OledButtonNavigation(ButtonNavigation):
 		self.button_c = DigitalInOut(board.D5)
 		self.button_c.switch_to_input(pull=Pull.UP)
 		self.button_down = False
-		self.listener: ButtonListener | None = None
 	
-	def tick(self) -> None:
+	def loop(self) -> None:
 		if not self.button_down:
 			if not self.button_a.value:
 				if self.listener is not None:
@@ -105,14 +107,22 @@ class JniMenu(ButtonListener):
 			font = terminalio.FONT  # type: ignore
 		self.font = font
 		self.display = display
+		splash = displayio.Group()
 		self.main_dgroup = displayio.Group()
+		splash.append(self.main_dgroup)
 		self._build_dgroup(self.root_menu)
 		self._update_selection((0, -1, -1))
-		display.show(self.main_dgroup)	
-		self.navigation = button_navigation
 
-	def tick(self) -> None:
-		self.navigation.tick()
+		self.secondary_dgroup = displayio.Group()
+		self.secondary_dgroup.hidden = True
+		splash.append(self.secondary_dgroup)		
+
+		display.show(splash)	
+		self.navigation = button_navigation
+		button_navigation.listener = self
+
+	def loop(self) -> None:
+		self.navigation.loop()
 	
 	def on_navi_up(self) -> None:
 		current_level = self._determine_level(self.selected_indeces)
@@ -147,6 +157,13 @@ class JniMenu(ButtonListener):
 		selected_item = self._find_item(self.selected_indeces)
 		# Fire callback function if any
 		if selected_item.cb is not None:
+			# FIXME Remove the following code later...
+			self.main_dgroup.hidden = True
+			text = "Hello"	
+			text_label = bitmap_label.Label(terminalio.FONT, text=text, color=self.BRIGHT, x=0, y=30)
+			self.secondary_dgroup.append(text_label)
+			self.secondary_dgroup.hidden = False
+
 			selected_item.cb()
 		# Dive into sub menus if any
 		if len(selected_item.children) > 0:
@@ -199,7 +216,7 @@ class JniMenu(ButtonListener):
 	def _build_dgroup(self, menu_item: JniMenuItem) -> None:
 		y = - (self.row_height // 2)
 		group = self.main_dgroup
-		while (len(group) > 0):
+		while len(group) > 0:
 			group.pop()
 		for item in menu_item.children:
 			item_group = displayio.Group()
@@ -297,9 +314,9 @@ def main() -> None:
 	# menu = JniMenu(button_navigation, display, menu_tree, 18, font=custom_font)  # type: ignore
 
 	menu = JniMenu(button_navigation, display, row_height=16, menu_items=menu_tree)
-	button_navigation.listener = menu
+	# button_navigation.listener = menu
 	while True:
-		menu.tick()
+		menu.loop()
 
 
 if __name__ == "__main__":
