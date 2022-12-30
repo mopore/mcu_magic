@@ -8,18 +8,21 @@ STOP_BYTE = 0x7E
 def main() -> None:
 	print("Waiting for bytes on UART...")
 	uart = busio.UART(tx=board.TX, rx=board.RX, baudrate=19200)
+	chars = []
 	while True:
 		data = uart.read(32)
 		if data:
 			print()
-			chars = []
 			for b in data:
 				if b == STOP_BYTE:
-					print("[Received STOP_BYTE]", end="")
+					# print("\n[Received STOP_BYTE]")
+					if len(chars) > 0:
+						word = "".join(chars)
+						print(f"\n\nReceived: {word}\n")
+						chars = []
 				else:
-					print(b, end="")
+					print(hex(b), end=" ")
 					chars.append(chr(b))	
-			print(f"Received: {chars}", end="")
 
 
 if __name__ == "__main__":
