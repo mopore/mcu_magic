@@ -11,8 +11,6 @@ def main() -> None:
 		if data:
 			data_string = "".join([chr(b) for b in data])
 			print(f"Received: {data_string}")
-		time.sleep(0.5)
-
 
 if __name__ == "__main__":
 	main()
