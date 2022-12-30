@@ -1,6 +1,5 @@
 import busio
 import board
-import array
 import time
 
 
@@ -11,11 +10,11 @@ def main() -> None:
 	while True:
 		counter += 1
 		data_string = f"Test #{counter}"
-		data = array.array("B", [ord(c) for c in data_string])
+		data = bytes(data_string, "utf-8")
 		uart.write(data)
-		time.sleep(0.5)
 		if counter % 10 == 0:
 			print(f"10 packages sent. Total {counter}")
+		time.sleep(3)
 
 
 if __name__ == "__main__":
