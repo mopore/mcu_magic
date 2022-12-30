@@ -23,7 +23,7 @@ def main() -> None:
 		uart.write(data_bytes)
 		if counter % 10 == 0:
 			print(f"10 packages sent. Total {counter}")
-		time.sleep(3)
+		time.sleep(1)
 
 
 if __name__ == "__main__":
