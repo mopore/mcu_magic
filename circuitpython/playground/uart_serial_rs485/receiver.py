@@ -1,6 +1,5 @@
 import busio
 import board
-import time
 
 
 def main() -> None:
@@ -10,7 +9,8 @@ def main() -> None:
 		data = uart.read(128)
 		if data:
 			data_string = "".join([chr(b) for b in data])
-			print(f"Received: {data_string}")
+			print(f"Received: {data_string}", end="")
+
 
 if __name__ == "__main__":
 	main()
