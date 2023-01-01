@@ -2,7 +2,10 @@ import busio
 import board
 import time
 
+
 STOP_BYTE_ARRAY = bytes([0x7E])
+PING_ALL_NODES_ARRAY = bytes([0x7E, 0xFF, 0x03, 0xEE, 0xFE, 0x1F, 0xFF, 0x00, 0x15, 
+						0x1C, 0x6C, 0x7E])
 
 
 def main() -> None:
@@ -23,7 +26,7 @@ def main() -> None:
 		uart.write(data_bytes)
 		if counter % 10 == 0:
 			print(f"10 packages sent. Total {counter}")
-		time.sleep(3)
+		time.sleep(1)
 
 
 if __name__ == "__main__":
