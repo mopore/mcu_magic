@@ -1,5 +1,6 @@
 # https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
 # circup install adafruit_requests
+# circup install adafruit_datetime
 import wifi
 import time
 import socketpool
