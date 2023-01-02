@@ -1,7 +1,7 @@
 # Ensure to have "neopixel" installed
 #
 # pip3 install circup
-# circup install neopixel
+# circup install adafruit_neopixel
 #
 # Product description: https://www.adafruit.com/product/4865
 

@@ -1,6 +1,6 @@
 # Ensure to have "neopixel" installed
 # pip3 install circup
-# circup install neopixel
+# circup install adafruit_neopixel
 
 # https://learn.adafruit.com/adafruit-neopixel-featherwing/pinouts
 
