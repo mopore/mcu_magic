@@ -21,10 +21,11 @@ palette_all_equal = [
 
 palette_weighted = [
     (0, 0xFFFFFF),  # White
-    (0.05, 0xffe20b),  # Yellow
-    (0.2, 0xFF660b),  # Orange
+    (0.03, 0xffe20b),  # Yellow
+    (0.17, 0xFF660b),  # Orange
     (0.45, 0xa70f0d),  # Red
-    (0.7, 0x5b2200),  # Brown
+    (0.65, 0x5b2200),  # Brown
+    (0.8, 0x201100),  # Dark Brown
 ]
 
 palette = fancy.expand_gradient(palette_weighted, 100)
