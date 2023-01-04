@@ -10,6 +10,7 @@ import board
 import neopixel
 import adafruit_fancyled.adafruit_fancyled as fancy
 
+
 # Declare a 5 element fire palette
 palette_all_equal = [
     0xFFFFFF,  # White
