@@ -103,13 +103,17 @@ class SparkEngine:
         (0.9, 0x090000),  # Brown
     ]
 
-    def __init__(self, config: SparkEngineConfig) -> None:  
+    def __init__(self, config: SparkEngineConfig, 
+                 pixels: neopixel.NeoPixel | None = None) -> None:  
         self.leds_number = config.leds_number
         self.frame_time = 1 / config.frequence
         self.generation_cycle = config.frequence * 5
         self.palette = fancy.expand_gradient(self.WEIGHTED_HEAT_GRADIENT, 100)
-        self.pixels = neopixel.NeoPixel(config.pin, config.leds_number, 
-            brightness=config.brightness, auto_write=False)
+        if (pixels is None):
+            self.pixels = neopixel.NeoPixel(config.pin, config.leds_number, 
+                brightness=config.brightness, auto_write=False)
+        else:
+            self.pixels = pixels
         self.offset = 0
         self.time_after_last_rendering = time.monotonic()
         self.time_before_last_rendering = time.monotonic()
@@ -143,27 +147,27 @@ class SparkEngine:
             
             # Regular loop
             self.time_before_last_rendering = time_now
-            self.cooldown_loop()
+            self._cooldown_loop()
             if self.cycle_counter == self.generation_cycle:
-                self.new_spark_generation_loop()
+                self._new_spark_generation_loop()
                 self.cycle_counter = 0
             else:
                 self.cycle_counter += 1
-            self.spark_warmup_loop()
-            self.render_loop()
+            self._spark_warmup_loop()
+            self._render_loop()
             self.time_after_last_rendering = time.monotonic()
             self.time_in_frame = False
         else:
             # We don't need the exra time in the frame
             self.time_in_frame = True
         
-    def render_loop(self) -> None:
+    def _render_loop(self) -> None:
         for i in range(self.leds_number):
             color = self.cell_value_to_color(i)
             self.pixels[i] = color.pack()
         self.pixels.show()
     
-    def cooldown_loop(self) -> None:
+    def _cooldown_loop(self) -> None:
         for i in range(self.leds_number):
             val = self.cells[i]
             if val > 0:
@@ -172,7 +176,7 @@ class SparkEngine:
                     val = 0
                 self.cells[i] = val
     
-    def new_spark_generation_loop(self) -> None:
+    def _new_spark_generation_loop(self) -> None:
         c = self.config
         amount_of_sparks = random.randint(c.sparks_min_amount, c.sparks_max_amount)
         for _ in range(amount_of_sparks):
@@ -185,7 +189,7 @@ class SparkEngine:
             new_spark = Spark(position, radius_cells, peak_energy, start_cycle, 30)
             self.sparks.append(new_spark)
     
-    def spark_warmup_loop(self) -> None:
+    def _spark_warmup_loop(self) -> None:
         for spark in self.sparks:
             if spark.dead:
                 self.sparks.remove(spark)
@@ -242,7 +246,6 @@ def main() -> None:
 
     while True:
         engine.loop()
-        time.sleep(0.01)
 
 
 if __name__ == "__main__":
