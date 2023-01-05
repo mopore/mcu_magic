@@ -84,23 +84,31 @@ class SparkEngineConfig:
         self.spark_min_width_pct = 10
         self.spark_max_width_pct = 30
         self.spark_min_peak_energy = 50
-        self.spark_max_peak_energy = 90
+        self.spark_max_peak_energy = 100
+        self.spark_min_duration = 6  # Frames
+        self.spark_max_duration = 40
 
 
 class SparkEngine:
     
     OVER_TIME_PCT_WARNING = 10
     
+    BLUE_RED_PALETTE = [
+        0x0a015c,  # Blue
+        0xff0000,  # Red  
+        0x0a015c,  # Blue
+    ]
+
     WEIGHTED_HEAT_GRADIENT = [
-        (0.1, 0x090000),  # Brown
-        (0.3, 0xa70f0d),  # Red
-        (0.35, 0xFF660b),  # Orange
-        (0.47, 0xffe20b),  # Yellow
-        (0.5, 0xFFFFFF),  # White
-        (0.53, 0xffe20b),  # Yellow
-        (0.65, 0xFF660b),  # Orange
-        (0.7, 0xa70f0d),  # Red
-        (0.9, 0x090000),  # Brown
+        (0.1, 0x0a015c),  # Blue
+        (0.3, 0x410070),  
+        (0.35, 0x70006e),  # Purple
+        (0.47, 0x9c0048),  
+        (0.5, 0xef0017),  # Red
+        (0.53, 0x9c0048),  
+        (0.65, 0x70006e),  # Purple
+        (0.7, 0x410070),  
+        (0.9, 0x0a015c),  # Blue
     ]
 
     def __init__(self, config: SparkEngineConfig, 
@@ -108,7 +116,8 @@ class SparkEngine:
         self.leds_number = config.leds_number
         self.frame_time = 1 / config.frequence
         self.generation_cycle = config.frequence * 5
-        self.palette = fancy.expand_gradient(self.WEIGHTED_HEAT_GRADIENT, 100)
+        # self.palette = fancy.expand_gradient(self.WEIGHTED_HEAT_GRADIENT, 100)
+        self.palette = self.BLUE_RED_PALETTE
         if (pixels is None):
             self.pixels = neopixel.NeoPixel(config.pin, config.leds_number, 
                 brightness=config.brightness, auto_write=False)
@@ -186,7 +195,8 @@ class SparkEngine:
             radius_cells = int((self.leds_number * (width_pct / 100)) / 2)
             start_cycle = random.randint(0, self.generation_cycle - 1)
             peak_energy = random.randint(c.spark_min_peak_energy, c.spark_max_peak_energy)
-            new_spark = Spark(position, radius_cells, peak_energy, start_cycle, 30)
+            duration = random.randint(c.spark_min_duration, c.spark_max_duration)
+            new_spark = Spark(position, radius_cells, peak_energy, start_cycle, duration)
             self.sparks.append(new_spark)
     
     def _spark_warmup_loop(self) -> None:
@@ -235,8 +245,8 @@ class SparkEngine:
 
 def main() -> None:
     # LED strip
-    config = SparkEngineConfig(board.IO14, brightness=0.1,  # type: ignore
-            leds_number=166, frequence=5)
+    config = SparkEngineConfig(board.IO14, brightness=0.5,  # type: ignore
+            leds_number=166, frequence=6)
     engine = SparkEngine(config)
 
     # # Keyboard settings
