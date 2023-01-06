@@ -40,9 +40,9 @@ def wait_for_response() -> None:
 
 
 def main() -> None:
-	for _ in range(10):
-		transmit_ping()
-
+	#  for _ in range(10):
+	#      transmit_ping()
+    #  
 	wait_for_response()
 
 
