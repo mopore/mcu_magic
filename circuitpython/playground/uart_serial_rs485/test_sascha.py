@@ -31,10 +31,10 @@ def wait_for_response() -> None:
             for b in data:
                 print(hex(b), end=" ")
                 chars.append(chr(b))	
-            #  if len(chars) > 0:
-            #      word = "".join(chars)
-            #      print(f"\n\nReceived: {word}\n")
-            #      chars = []
+            if len(chars) > 0:
+                word = "".join(chars)
+                print(f"\n\nReceived: {word}\n")
+                chars = []
 
 def main() -> None:
     #  for _ in range(10):
