@@ -4,10 +4,14 @@ import board
 
 STOP_BYTE = 0x7E
 
+BAUDRATE = 19200
+DELAY_MICROSECS = (BAUDRATE / 10) * 2 + 100
+DELAY_SECONDS = DELAY_MICROSECS / 1_000_000
+
 
 def main() -> None:
 	print("Waiting for bytes on UART...")
-	uart = busio.UART(tx=board.TX, rx=board.RX, baudrate=19200)
+	uart = busio.UART(tx=board.TX, rx=board.RX, baudrate=BAUDRATE)
 	chars = []
 	while True:
 		data = uart.read(32)
