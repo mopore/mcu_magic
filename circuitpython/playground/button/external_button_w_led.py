@@ -11,7 +11,7 @@ BUTTON_NOT_PRESSED = True
 
 
 def main() -> None:
-    ext_button = DigitalInOut(board.IO5)
+    ext_button = DigitalInOut(board.IO5)  # type: ignore    ext_button.switch_to_input(pull=Pull.UP)
     ext_button.switch_to_input(pull=Pull.UP)
     
     led = digitalio.DigitalInOut(board.IO1)  # UM
