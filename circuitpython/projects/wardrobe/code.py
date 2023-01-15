@@ -11,7 +11,7 @@ def main() -> None:
 
 	# Prepare VL53L1X
 	MODE_LONG = 2
-	i2c = board.I2C()
+	i2c = board.STEMMA_I2C()  # type: ignore
 	vl53 = adafruit_vl53l1x.VL53L1X(i2c)
 	vl53.distance_mode = MODE_LONG
 	vl53.start_ranging()
@@ -27,12 +27,14 @@ def main() -> None:
 			brightness = int((math.sin(phase) + 1.0) * 0.5 ** GAMMA * 65535 + 0.5)
 			pin.duty_cycle = brightness
 			if vl53.data_ready:
-				try:
-					print(f"Distance: {vl53.distance:.0f} cm", end="\r")
-				except Exception as e:
-					print(e)
+				distance = vl53.distance
+				if distance is not None:
+					try:
+						print(f"Distance: {distance:.0f} cm", end="\r")
+					except Exception as e:
+						print(e)
 				vl53.clear_interrupt()
-				time.sleep(.1)
+				time.sleep(.2)
 
 
 if __name__ == "__main__":
