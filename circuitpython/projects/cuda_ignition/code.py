@@ -22,7 +22,11 @@ class CudaIgnition:
         elif "OFF" == message.upper().strip():
             self.relay_control.turn_off()
         else:
-            print(f"Unknown command: {message}")
+            try:
+                seconds_to_wait = float(message)
+                self.relay_control.turn_on_for(seconds_to_wait)
+            except ValueError:
+                print(f"Unknown command: {message}")
     
 
 async def main() -> None:

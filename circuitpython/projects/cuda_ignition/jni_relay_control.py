@@ -19,6 +19,11 @@ class RelayControl:
 	def turn_off(self) -> None:
 		self.relay_pin.value = False
 
+	def turn_on_for(self, seconds: float) -> None:
+		self.turn_on()
+		time.sleep(seconds)
+		self.turn_off()
+
 
 def main() -> None:
 	control = RelayControl()
