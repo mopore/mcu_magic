@@ -1,6 +1,6 @@
 import board
 import digitalio
-from digitalio import DigitalInOut, Pull
+from digitalio import DigitalInOut
 import time
 # If the relay is unset, the NC pin (Normally Connected) is mechanically 
 # connected to COM. NO (Normally Open) is mechanically disconnected.
@@ -10,7 +10,8 @@ import time
 
 def main() -> None:
 
-    relay_pin = DigitalInOut(board.IO11)
+    # UM FeatherS3
+    relay_pin = DigitalInOut(board.IO11)  # type: ignore    
     relay_pin.direction = digitalio.Direction.OUTPUT
 
     print("Setting relay to on in 1 second")
@@ -25,6 +26,7 @@ def main() -> None:
     relay_pin.value = False
 
     print("Done")
+
+
 if __name__ == "__main__":
     main()
-
