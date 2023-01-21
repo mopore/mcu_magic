@@ -53,6 +53,9 @@ def main() -> None:
 		enlighter.light_down()
 		time.sleep(2)
 
+	# Just wait 3 seconds to see if light stays off
+	time.sleep(3)
+
 
 if __name__ == "__main__":
 	main()
