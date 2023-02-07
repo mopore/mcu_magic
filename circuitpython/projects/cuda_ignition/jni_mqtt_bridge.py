@@ -138,16 +138,18 @@ class MqttBridge:
 	
 	async def loop(self):
 		while self.DEAD != self.state:
-			if self.OPERATIONAL == self.state:
-				try:
-					now = time.monotonic()
-					time_passed = now - self.last_alive
-					if time_passed > self.ALIVE_FREQUENCY_SECONDS:
+			try:
+				now = time.monotonic()
+				time_passed = now - self.last_alive
+				if time_passed > self.ALIVE_FREQUENCY_SECONDS:
+					if not self._self_check():
+						print("MQTT not operational, postponing alive tick...")
+					else:
 						self.mqtt_client.publish(self.TOPIC_ALIVE_NAME, self.ALIVE_VALUE)
 						self.last_alive = now
-
+				if self.OPERATIONAL == self.state:
 					self.mqtt_client.loop()
-					await asyncio.sleep(0)
-				except Exception as e:
-					# This is whether related to ESP32-S3, CircuitPython 8 or both...
-					print(f"Ignoring an error while looping: {e}")
+				await asyncio.sleep(0)
+			except Exception as e:
+				# This is whether related to ESP32-S3, CircuitPython 8 or both...
+				print(f"Ignoring an error while looping: {e}")
