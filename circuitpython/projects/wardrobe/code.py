@@ -90,7 +90,8 @@ def main() -> None:
 							last_turn_off_request = time.monotonic()
 						else:
 							time_passed = time.monotonic() - last_turn_off_request
-							if time_passed > 0:
+							if time_passed > 1:
+								# Wait 1 second for constant turn-off requests to turn off noobs.
 								current_noods_state = desired_noods_state
 								enligher.light_down()
 						
