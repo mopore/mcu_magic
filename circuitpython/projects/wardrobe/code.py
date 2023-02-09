@@ -46,9 +46,10 @@ class ThresholdProvider:
 					time_passed = now - self.last_distance_time
 					if time_passed > self.STABLE_FOR_CALIBRATION_SEC:
 						self.distance_threshold = distance
-						self.state = self.STATE_CALIBRATED
 						self.onboard_np.fill(self.NP_BLACK)
 						self.onboard_np.brightness = 0
+						self.last_noods_off = time.monotonic()
+						self.state = self.STATE_CALIBRATED
 						print(f"Threshold calibrated to {distance}")
 				else:
 					self.onboard_np.fill(self.NP_RED)
@@ -67,22 +68,32 @@ def main() -> None:
 	dp = distance_provider.DistanceProvider()
 	pin = board.MOSI  # Adafruit QT Py ESP32-S3
 	enligher = noods_enlighter.NoodsEnlighter(pin)
-	led_state = NOODS_OFF
+	current_noods_state = NOODS_OFF
 	thresholdProvider = ThresholdProvider()
+	last_turn_off_request: float = 0
 
-	while True:                            # Repeat forever...
+	while True:
 		distance = dp.read_distance()
 		if distance is not None:
-			if ThresholdProvider.STATE_CALIBRATED == thresholdProvider.state:
-				desired_state = thresholdProvider.get_desired_state(distance)
-				if desired_state != led_state:
-					led_state = desired_state
-					if led_state == NOODS_ON:
+			needs_calibration = ThresholdProvider.STATE_CALIBRATED != thresholdProvider.state
+			if needs_calibration:
+				thresholdProvider.calibrate(distance)
+			else:
+				desired_noods_state = thresholdProvider.get_desired_state(distance)
+				if desired_noods_state != current_noods_state:
+					if desired_noods_state == NOODS_ON:
+						last_turn_off_request = 0
+						current_noods_state = desired_noods_state
 						enligher.light_up()
 					else:
-						enligher.light_down()
-			else:
-				thresholdProvider.calibrate(distance)
+						if last_turn_off_request == 0:
+							last_turn_off_request = time.monotonic()
+						else:
+							time_passed = time.monotonic() - last_turn_off_request
+							if time_passed > 0:
+								current_noods_state = desired_noods_state
+								enligher.light_down()
+						
 		time.sleep(.2)
 
 
