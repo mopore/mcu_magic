@@ -1,7 +1,4 @@
-# circup install asyncio
-# circup install adafruit_requests
-# circup install adafruit_datetime
-# circup install adafruit_minimqtt
+# circup install asyncio adafruit_requests adafruit_datetime adafruit_minimqtt
 
 import asyncio
 
@@ -15,7 +12,7 @@ class CudaIgnition:
     def __init__(self) -> None:
         self.relay_control = jni_relay_control.RelayControl()
 
-    def command_cb(self, message: str) -> None:
+    def command_cb(self, message: str, topic: str) -> None:
         print(f"Received command: {message}")
         if "ON" == message.upper().strip():
             self.relay_control.turn_on()
@@ -32,10 +29,10 @@ class CudaIgnition:
 async def main() -> None:
     ignition = CudaIgnition()
  
-    print("Hello, world!")
+    print("Starting Cuda Ignition...")
     jni_wifi.connect_wifi()
-    mqtt = jni_mqtt_bridge.MqttBridge("cudo_ignition", ignition.command_cb)
-    mqtt_loop_task = asyncio.create_task(mqtt.loop())
+    mqtt = jni_mqtt_bridge.MqttBridge(ignition.command_cb)
+    mqtt_loop_task = asyncio.create_task(mqtt.loop_async())
     await asyncio.gather(mqtt_loop_task)
 
 
