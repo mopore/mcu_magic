@@ -4,7 +4,7 @@ import jni_mqtt_broker
 import asyncio
 
 
-class MqttBridge:
+class TestMqttBridge:
 
 	SERVICE_NAME = "testComponent"
 
@@ -42,7 +42,7 @@ def test_cb(message: str, topic: str) -> None:
 	print(f"Received topic: {topic}, message: {message}")
 
 
-async def test_publish_after_5_sec(bridge: MqttBridge) -> None:
+async def test_publish_after_5_sec(bridge: TestMqttBridge) -> None:
 	await asyncio.sleep(5)
 	bridge.publish("testTopic", "testMessage")
 
@@ -51,7 +51,7 @@ async def main() -> None:
 	subscriptions = ["testTopic"]
 	print("Testing...")
 	jni_wifi.connect_wifi()
-	bridge = MqttBridge(test_cb, subscriptions)
+	bridge = TestMqttBridge(test_cb, subscriptions)
 	bridge_task = asyncio.create_task(bridge.loop_async())
 	publish_task = asyncio.create_task(test_publish_after_5_sec(bridge))
 	await asyncio.gather(bridge_task, publish_task)
