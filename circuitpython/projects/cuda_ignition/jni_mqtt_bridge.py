@@ -16,7 +16,6 @@ class MqttBridge:
 
 	def __init__(
 		self, 
-		topic_callback, 
 		message_callback=None, 
 		subscriptions: list[str] | None = None
 	) -> None:
@@ -27,7 +26,7 @@ class MqttBridge:
 			message_callback,
 			subscriptions	
 		) 
-		self.topic_callback = topic_callback	
+		self.message_callback = message_callback	
 	
 	def exit(self) -> None:
 		self._broker.exit()
@@ -52,7 +51,7 @@ async def main() -> None:
 	subscriptions = ["testTopic"]
 	print("Testing...")
 	jni_wifi.connect_wifi()
-	bridge = MqttBridge(test_cb, test_cb, subscriptions)
+	bridge = MqttBridge(test_cb, subscriptions)
 	bridge_task = asyncio.create_task(bridge.loop_async())
 	publish_task = asyncio.create_task(test_publish_after_5_sec(bridge))
 	await asyncio.gather(bridge_task, publish_task)

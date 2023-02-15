@@ -28,11 +28,13 @@ class CudaIgnition:
 
 async def main() -> None:
     ignition = CudaIgnition()
+    subscriptions = ["jniHome/services/cudaIgnition/command"]
  
     print("Starting Cuda Ignition...")
     jni_wifi.connect_wifi()
-    mqtt = jni_mqtt_bridge.MqttBridge(ignition.command_cb)
+    mqtt = jni_mqtt_bridge.MqttBridge(ignition.command_cb, subscriptions)
     mqtt_loop_task = asyncio.create_task(mqtt.loop_async())
+    print("Setup complete.")
     await asyncio.gather(mqtt_loop_task)
 
 
