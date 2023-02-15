@@ -8,6 +8,26 @@ import adafruit_minimqtt.adafruit_minimqtt as mqtt
 import jni_wifi
 
 
+class MqttCredentials:
+
+	def __init__(self, username: str, password: str) -> None:
+		self.username = username
+		self.password = password
+
+
+class MqttServerInfo:
+
+	def __init__(
+		self, 
+		ip: str, 
+		port: int = 1883, 
+		credentials: MqttCredentials | None = None
+	) -> None:
+		self.ip = ip
+		self.port = port
+		self.credentials = credentials
+
+
 class MqttBroker:
 	SERVICE_PREFIX = "jniHome/services"
 	ALIVE_POSTFIX = "aliveTick"
@@ -28,13 +48,15 @@ class MqttBroker:
 
 	def __init__(
 		self, 
-		server_ip: str,
+		server_info: MqttServerInfo,
 		name: str,
 		send_alive: bool = True,
 		message_callback=None, 
 		topic_subscriptions: list[str] | None = None
 	) -> None:
-		self._server_ip = server_ip
+		self._server_ip = server_info.ip
+		self._server_port = server_info.port
+		self._server_credentials = server_info.credentials
 		self._name = name
 		self._message_callback = message_callback	
 		self._send_alive = send_alive
@@ -109,13 +131,27 @@ class MqttBroker:
 				if self._mqtt_client is None:
 					pool = socketpool.SocketPool(wifi.radio)
 					now = time.time()
-					self._mqtt_client = mqtt.MQTT(
-						client_id=f"{self._name}{now}",
-						broker=self._server_ip, 
-						socket_pool=pool,
-						is_ssl=False,
-						keep_alive=30,
-					)
+					if self._server_credentials is None:
+						self._mqtt_client = mqtt.MQTT(
+							client_id=f"{self._name}{now}",
+							broker=self._server_ip, 
+							port=self._server_port,
+							socket_pool=pool,
+							is_ssl=False,
+							keep_alive=30,
+						)
+					else:
+						print(f"Using credentials for user {self._server_credentials.username}.")
+						self._mqtt_client = mqtt.MQTT(
+							client_id=f"{self._name}{now}",
+							broker=self._server_ip, 
+							port=self._server_port,
+							socket_pool=pool,
+							is_ssl=False,
+							keep_alive=30,
+							username=self._server_credentials.username,
+							password=self._server_credentials.password,
+						)
 					self._mqtt_client.on_connect = self.on_connect  # type: ignore
 					self._mqtt_client.on_disconnect = self.on_disconnect  # type: ignore
 				

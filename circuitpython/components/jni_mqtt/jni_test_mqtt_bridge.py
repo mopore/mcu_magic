@@ -1,7 +1,13 @@
 import jni_wifi
+import asyncio
+
 import jni_mqtt_broker
 
-import asyncio
+try:
+	from secrets.jni_secrets import secrets
+except ImportError:
+	print("WiFi secrets are kept in secrets.py, please add them there!")
+	raise
 
 
 class TestMqttBridge:
@@ -9,18 +15,29 @@ class TestMqttBridge:
 	SERVICE_NAME = "testComponent"
 
 	# Constants - Change depending on environment
-	# MQTT_SERVER_IP = "127.0.0.1"  # Quieter2 on home network
 	MQTT_SERVER_IP = "192.168.199.119"  # Quieter2 on home network
 	# MQTT_SERVER_IP = "10.200.0.6"  # Quieter2 on Wireguard network
-	# MQTT_SERVER_IP = "192.168.199.245"  # PD Manajaro laptop on home network
+	# MQTT_SERVER_IP = "192.168.199.245"  # NZXT Linux on home network
 
 	def __init__(
 		self, 
 		message_callback=None, 
 		subscriptions: list[str] | None = None
 	) -> None:
+		# credentials = jni_mqtt_broker.MqttCredentials(
+		# 	secrets["mqtt_username"], 
+		# 	secrets["mqtt_password"]
+		# )
+		# server_info = jni_mqtt_broker.MqttServerInfo(
+		# 	self.MQTT_SERVER_IP,
+		# 	1883,
+		# 	credentials
+		# )
+
+		server_info = jni_mqtt_broker.MqttServerInfo(self.MQTT_SERVER_IP)
+
 		self._broker = jni_mqtt_broker.MqttBroker(
-			self.MQTT_SERVER_IP,
+			server_info,
 			self.SERVICE_NAME,
 			True,
 			message_callback,

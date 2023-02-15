@@ -19,8 +19,9 @@ class CudaMqttBridge:
 		message_callback=None, 
 		subscriptions: list[str] | None = None
 	) -> None:
+		server_info = jni_mqtt_broker.MqttServerInfo(self.MQTT_SERVER_IP)
 		self._broker = jni_mqtt_broker.MqttBroker(
-			self.MQTT_SERVER_IP,
+			server_info,
 			self.SERVICE_NAME,
 			True,
 			message_callback,
