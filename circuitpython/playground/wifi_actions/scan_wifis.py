@@ -1,11 +1,12 @@
 import wifi
 
+
 def translate_signal_strength(signel: int) -> int:
 	"""Translate the signal strength from dBm to percentage."""
 	if signel <= -100:
-		return 0.0
+		return 0
 	elif signel >= -50:
-		return 100.0
+		return 100
 	else:
 		return 2 * (signel + 100)
 
@@ -25,6 +26,7 @@ def main() -> None:
 		#  print(f"Channel: {network.channel}")
 		print(f"Security: {network.authmode}")
 		print("")
+
 
 if __name__ == "__main__":
 	main()
