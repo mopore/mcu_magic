@@ -6,6 +6,7 @@ import time
 
 import adafruit_requests
 
+
 def connect_wifi() -> None:
 	if wifi.radio.ap_info is not None:
 		print("Already connected!")

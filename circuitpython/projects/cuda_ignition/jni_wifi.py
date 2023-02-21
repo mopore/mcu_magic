@@ -16,7 +16,84 @@ except ImportError:
 	raise
 
 
-def connect_wifi(sync_time=True) -> adafruit_requests.Session:
+def translate_signal_strength(signal: int) -> int:
+	"""Translate the signal strength from dBm to percentage."""
+	if signal <= -100:
+		return 0
+	elif signal >= -50:
+		return 100
+	else:
+		return 2 * (signal + 100)
+
+
+def scan_wifis(verbose_scanning: bool = False) -> list[str]:
+	print("Scanning wifis...") if verbose_scanning else None
+	networks: list[wifi.Network] = []
+	for network in wifi.radio.start_scanning_networks():
+		networks.append(network)
+	wifi.radio.stop_scanning_networks()
+	networks = sorted(networks, key=lambda net: net.rssi, reverse=True)
+	ssids: list[str] = []
+	for network in networks:
+		print(f"SSID: {network.ssid}") if verbose_scanning else None
+		ssids.append(network.ssid)
+		#  print(f"BSSID: {network.bssid}")
+		percentage = translate_signal_strength(network.rssi)
+		print(f"Signal Strength: {percentage}%") if verbose_scanning else None
+		print(f"Security: {network.authmode}\n") if verbose_scanning else None
+	return ssids
+
+
+def _connect_wifi(ssid: str, wifi_pwd: str) -> bool:
+	connect_max_time = 20
+	connected = False
+	connect_start_time = time.monotonic()
+	attempts_counter = 0
+	while not connected and ((time.monotonic() - connect_start_time) < connect_max_time):
+		try:
+			wifi.radio.connect(ssid, wifi_pwd)	
+			info = wifi.radio.ap_info
+			print(f"Connected to {info.ssid}!")
+			connected = True
+		except ConnectionError:
+			attempts_counter += 1
+	return connected
+
+
+def read_wifi_creds() -> list[tuple[str, str]]:
+	print("Reading wifi credentials from secrets/jni_secrets.py...")
+	try:
+		# Old format did not have numbered SSIDs
+		ssid = secrets["ssid"]
+		password = secrets["password"]
+		print(f"Found credentials in old format for: {ssid}")
+		return [(ssid, password)]
+	except KeyError:
+		...
+
+	# New format has numbered SSIDs
+	credentials: list[tuple[str, str]] = []	
+	counter = 0
+	print("Looking for 'ssid_1' and 'wifi_password_1'...")
+	while True:
+		counter += 1
+		try:
+			ssid = secrets[f"ssid_{counter}"]
+			password = secrets[f"wifi_password_{counter}"]
+			print(f"Found credentials for: {ssid}")
+			credentials.append((ssid, password))
+		except KeyError:
+			# No more SSIDs to try
+			break
+	if len(credentials) == 0:
+		print("Could not find any credentials!")
+		return []
+	return credentials
+
+
+def connect_wifi(
+	sync_time=True 
+) -> adafruit_requests.Session:
 	http_session: adafruit_requests.Session | None = None
 	if wifi.radio.ap_info is not None:
 		print("Already connected!")
@@ -24,26 +101,35 @@ def connect_wifi(sync_time=True) -> adafruit_requests.Session:
 		http_session = adafruit_requests.Session(pool, ssl.create_default_context())
 		return http_session
 
-	connect_max_time = 30
-	connected = False
-	connect_start_time = time.monotonic()
-	attempts_counter = 0
 	if wifi.radio.enabled is False:
-		print("Enabeling radio.")
+		print("Enabling radio.")
 		wifi.radio.enabled = True
-	while not connected and ((time.monotonic() - connect_start_time) < connect_max_time):
-		try:
-			ssid = secrets['ssid']
-			wifi_pwd = secrets['password']
-			print("Connecting to WiFi...")
-			wifi.radio.connect(ssid, wifi_pwd)	
-			info = wifi.radio.ap_info
-			print(f"Connected to {info.ssid}!")
-			connected = True
-		except ConnectionError as e:
-			attempts_counter += 1
+	credentials = read_wifi_creds()
+	multiple_creds = len(credentials) > 1
+	connected = False
+	if multiple_creds:
+		scanned_ssids = scan_wifis()
+		credentials_scanned_ssids = [c for c in credentials if c[0] in scanned_ssids]
+		credentials_not_scanned = [c for c in credentials if c[0] not in scanned_ssids]
+			
+		# Try to connect to with credentials which SSID match the scanned SSIDs
+		for ssid, wifi_pwd in credentials_scanned_ssids:
+			print(f"Trying '{ssid}'...")
+			connected = _connect_wifi(ssid, wifi_pwd)
+			if connected:
+				break
+		if not connected:  # Try to connect with the rest of the credentials
+			for ssid, wifi_pwd in credentials_not_scanned:
+				print(f"Trying '{ssid}'...")
+				connected = _connect_wifi(ssid, wifi_pwd)
+				if connected:
+					break
+	else:  # Only one set of credentials
+		ssid, wifi_pwd = credentials[0]
+		connected = _connect_wifi(ssid, wifi_pwd)
+
 	if connected is False:
-		print(f"Could not connect to Wifi afer {attempts_counter} attempts!")
+		print("Could not connect to Wifi!")
 		wifi.radio.enabled = False
 		raise ConnectionError()
 	pool = socketpool.SocketPool(wifi.radio)
