@@ -1,7 +1,8 @@
 # circup install adafruit_requests
-
-import time
 import wifi
+import socketpool
+import ssl
+import time
 
 import adafruit_requests
 
@@ -18,9 +19,10 @@ def connect_wifi() -> None:
 			print("Connecting to WiFi...")
 			if not wifi.radio.enabled:
 				wifi.radio.enabled = True
-			ssid = 'BYOD'
-			wifi_pwd = secrets['password']
-			wifi.radio.connect(ssid)	
+			# JNI's personal Wifi hotspot
+			ssid = 'PD-jni-iphone-22'
+			password = '4axw57v41k1pf'
+			wifi.radio.connect(ssid, password)	
 			connected = True 
 			info = wifi.radio.ap_info
 			print(f"Connected to {info.ssid}!")
@@ -42,11 +44,12 @@ def main() -> None:
 	connect_wifi()
 	url = "http://httpbin.org/get"
 	print(f"Sending get to {url}")
-	response = adafruit_requests.get(url)
+	pool = socketpool.SocketPool(wifi.radio)
+	session = adafruit_requests.Session(pool, ssl.create_default_context())
+	response = session.get(url)
 	json_text = response.json()
 	response.close()
 	print("Response is: ", json_text)
-	time.sleep(5)
 	disconnect_wifi()
 
 
