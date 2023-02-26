@@ -2,6 +2,8 @@
 set -euo pipefail
 
 PATH_USB_DRIVE="/run/media/jni/CIRCUITPY1"
+CURRENT_DIR="$(pwd)"  # Ensure to get a full path for DIST_DIR
+PATH_DIST_DIR="${CURRENT_DIR}/dist"
 
 MPY_CROSS_COMMAND="mpy-cross-7.3.3"
 
@@ -49,19 +51,34 @@ if ! question_yes_no "Updating code.py, boot.py and JNI files on device?"; then
 	exit 0
 fi
 
-echo "Removing old files..."
+# Build/Precompile
+echo "Clean root directory in dist directory..."
+rm -rfv "${PATH_DIST_DIR}/root"
+mkdir -p "${PATH_DIST_DIR}/root"
+
+cd src
+cp -v ./code.py "${PATH_DIST_DIR}/root/code.py"
+if [ -f ./boot.py ]; then
+	cp -v ./boot.py "${PATH_DIST_DIR}/root/boot.py"
+fi
+echo "Precompiling project files from src..."
+find . -name "jni_*.py" -exec mpy-cross-7.3.3 {} \; -print
+find . -name "jni_*.mpy" -exec mv {} "${PATH_DIST_DIR}/root" \; -print
+cd ..
+
+echo "Removing old files from usb drive..."
 rm -fv "${PATH_USB_DRIVE}/code.py"
 rm -fv "${PATH_USB_DRIVE}/boot.py"
 # Delete old files other than jni_secrets.py
 find "${PATH_USB_DRIVE}" ! -name "jni_secrets.py" -name "jni_*.mpy" -delete -print
 
-echo "Copying new files..."
-cp -v ./code.py "${PATH_USB_DRIVE}/code.py"
-if [ -f ./boot.py ]; then
-	cp -v ./boot.py "${PATH_USB_DRIVE}/boot.py"
+
+echo "Copying base files from dist folder to usb drive..."
+cp -v "${PATH_DIST_DIR}/root/code.py" "${PATH_USB_DRIVE}/code.py"
+if [ -f ${PATH_DIST_DIR}/root/boot.py ]; then
+	cp -v "${PATH_DIST_DIR}/root/boot.py" "${PATH_USB_DRIVE}/boot.py"
 fi
-# Precomile and copy new files
-find . -name "jni_*.py" -exec mpy-cross-7.3.3 {} \; -print
-find . -name "jni_*.mpy" -exec mv {} "${PATH_USB_DRIVE}" \; -print
+echo "Copying precomplied project files from dist folder to usb drive..."
+find "${PATH_DIST_DIR}/root" -name "jni_*.mpy" -exec cp {} "${PATH_USB_DRIVE}" \; -print
 
 exit 0
