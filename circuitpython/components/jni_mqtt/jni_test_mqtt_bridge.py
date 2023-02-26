@@ -9,36 +9,36 @@ except ImportError:
 	print("WiFi secrets are kept in secrets.py, please add them there!")
 	raise
 
+MQTT_SERVICE_NAME_KEY = "mqtt_service_name"
+MQTT_SERVER_KEY = "mqtt_server"
+MQTT_USERNAME_KEY = "mqtt_username"
+MQTT_PASSWORD_KEY = "mqtt_password"
+
 
 class TestMqttBridge:
-
-	SERVICE_NAME = "testComponent"
-
-	# Constants - Change depending on environment
-	MQTT_SERVER_IP = "192.168.199.119"  # Quieter2 on home network
-	# MQTT_SERVER_IP = "10.200.0.6"  # Quieter2 on Wireguard network
-	# MQTT_SERVER_IP = "192.168.199.245"  # NZXT Linux on home network
 
 	def __init__(
 		self, 
 		message_callback=None, 
 		subscriptions: list[str] | None = None
 	) -> None:
+		service_name = secrets[MQTT_SERVICE_NAME_KEY]
+		mqtt_server = secrets[MQTT_SERVER_KEY]
 		# credentials = jni_mqtt_broker.MqttCredentials(
-		# 	secrets["mqtt_username"], 
-		# 	secrets["mqtt_password"]
+		# 	secrets[MQTT_USERNAME_KEY], 
+		# 	secrets[MQTT_PASSWORD_KEY]
 		# )
 		# server_info = jni_mqtt_broker.MqttServerInfo(
-		# 	self.MQTT_SERVER_IP,
+		# 	mqtt_server,
 		# 	1883,
 		# 	credentials
 		# )
 
-		server_info = jni_mqtt_broker.MqttServerInfo(self.MQTT_SERVER_IP)
+		server_info = jni_mqtt_broker.MqttServerInfo(mqtt_server)
 
 		self._broker = jni_mqtt_broker.MqttBroker(
 			server_info,
-			self.SERVICE_NAME,
+			service_name,
 			True,
 			message_callback,
 			subscriptions	
