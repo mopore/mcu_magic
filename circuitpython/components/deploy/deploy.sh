@@ -26,17 +26,45 @@ question_yes_no() {
 	local question="$1"
 	local answer
 	while true; do
-		read -p "$question [Y/n] " answer
+		read -p "$question" answer
 		case $answer in
 			[Yy]* ) return 0;;
 			[Nn]* ) return 1;;
-			* ) return 0;;
+			* ) return 1;;
 		esac
 	done
 }
 
+# ################################
+# BUILD / PRECOMPILE
+# ################################
+echo "Clean root directory in dist directory..."
+rm -rfv "${PATH_DIST_DIR}/root"
+mkdir -p "${PATH_DIST_DIR}/root"
+
+echo "Copying code.py and boot.py to dist directory..."
+cd src
+cp -v ./code.py "${PATH_DIST_DIR}/root/code.py"
+if [ -f ./boot.py ]; then
+	cp -v ./boot.py "${PATH_DIST_DIR}/root/boot.py"
+fi
+echo "Precompiling and moving project files to dist directory..."
+find . -name "jni_*.py" -exec mpy-cross-7.3.3 {} \; -print
+find . -name "jni_*.mpy" -exec mv {} "${PATH_DIST_DIR}/root" \; -print
+cd ..
+
+
+# ################################
+# DEVICE UPDATE
+# ################################
+if ! question_yes_no "Updating device? [y/N]"; then
+	echo "Not updating. Will exit."
+	exit 0
+fi
+
 # This will check for `remove_to_hide_drive.txt` file which is a good indicator
 # for operating with the keyboard's USB drive.
+# We do not want to accidentally delete files on the keyboard's USB drive.
 if [ -f "${PATH_USB_DRIVE}/remove_to_hide_drive.txt" ]; then
 	echo "ERROR: Found keyboard!"
 	echo "Check the 'PATH_USB_DRIVE' variable at the top of this script."
@@ -46,32 +74,11 @@ else
 	echo "Target drive found at: ${PATH_USB_DRIVE}"
 fi
 
-if ! question_yes_no "Updating code.py, boot.py and JNI files on device?"; then
-	echo "Not updating. Will exit."
-	exit 0
-fi
-
-# Build/Precompile
-echo "Clean root directory in dist directory..."
-rm -rfv "${PATH_DIST_DIR}/root"
-mkdir -p "${PATH_DIST_DIR}/root"
-
-cd src
-cp -v ./code.py "${PATH_DIST_DIR}/root/code.py"
-if [ -f ./boot.py ]; then
-	cp -v ./boot.py "${PATH_DIST_DIR}/root/boot.py"
-fi
-echo "Precompiling project files from src..."
-find . -name "jni_*.py" -exec mpy-cross-7.3.3 {} \; -print
-find . -name "jni_*.mpy" -exec mv {} "${PATH_DIST_DIR}/root" \; -print
-cd ..
-
 echo "Removing old files from usb drive..."
 rm -fv "${PATH_USB_DRIVE}/code.py"
 rm -fv "${PATH_USB_DRIVE}/boot.py"
 # Delete old files other than jni_secrets.py
 find "${PATH_USB_DRIVE}" ! -name "jni_secrets.py" -name "jni_*.mpy" -delete -print
-
 
 echo "Copying base files from dist folder to usb drive..."
 cp -v "${PATH_DIST_DIR}/root/code.py" "${PATH_USB_DRIVE}/code.py"
