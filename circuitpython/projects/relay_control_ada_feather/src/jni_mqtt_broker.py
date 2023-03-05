@@ -2,6 +2,7 @@ import time
 import wifi
 import socketpool
 import asyncio
+import microcontroller
 
 import adafruit_minimqtt.adafruit_minimqtt as mqtt
 
@@ -190,6 +191,7 @@ class MqttBroker:
 		if not self._connected:
 			print("Error: We should have a connection after 3 attempts and 17+ minutes...")
 			self._state = self.DEAD
+			microcontroller.reset()
 			self.exit()
 	
 	def _self_check(self) -> bool:

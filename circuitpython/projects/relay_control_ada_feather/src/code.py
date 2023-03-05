@@ -1,6 +1,8 @@
 # circup install asyncio adafruit_requests adafruit_datetime adafruit_minimqtt
 
 import asyncio
+import microcontroller
+import time
 
 import jni_wifi
 import jni_neo_mqtt_bridge
@@ -44,7 +46,12 @@ async def main() -> None:
 	mqtt = jni_neo_mqtt_bridge.NeoMqttBridge(service_name, ignition.command_cb, subscriptions)
 	mqtt_loop_task = asyncio.create_task(mqtt.loop_async())
 	print("Setup complete.")
-	await asyncio.gather(mqtt_loop_task)
+	try:
+		await asyncio.gather(mqtt_loop_task)
+	except Exception:
+		print(f"Exception in main loop: {Exception}")
+		time.sleep(10)
+		microcontroller.reset()
 
 
 if __name__ == "__main__":
