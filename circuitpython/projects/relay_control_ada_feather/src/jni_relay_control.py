@@ -11,8 +11,9 @@ import time
 class RelayControl:
 	def __init__(self) -> None:
 		# UM FeatherS3
-		# self.relay_pin = digitalio.DigitalInOut(board.IO11)  # type: ignore    
-		self.relay_pin = digitalio.DigitalInOut(board.D13)
+		self.relay_pin = digitalio.DigitalInOut(board.IO11)  # type: ignore    
+		# Adafruit Feather
+		#  self.relay_pin = digitalio.DigitalInOut(board.D13)
 		self.relay_pin.direction = digitalio.Direction.OUTPUT
 
 	def turn_on(self) -> None:
