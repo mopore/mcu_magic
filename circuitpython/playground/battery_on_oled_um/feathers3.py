@@ -1,14 +1,5 @@
-#FeatherS3 Helper Library
-# 2022 Seon Rozenblum, Unexpected Maker
-#
-# Project home:
-#   https://feathers3.io
-#
-
-# Import required libraries
-import time
 import board
-from digitalio import DigitalInOut, Direction, Pull
+from digitalio import DigitalInOut, Direction
 from analogio import AnalogIn
 
 # Init Blink LED
