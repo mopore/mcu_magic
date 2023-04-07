@@ -21,8 +21,7 @@ def main() -> None:
 		engine = servo.Servo(pwm, min_pulse=600, max_pulse=2400)
 		engines.append(engine)
 
-	# angles = [0, 45, 90, 135, 180, 135, 90, 45, 0]
-	angles = [90]
+	angles = [90, 45, 0, 45, 90, 135, 180, 135, 90]
 
 	print("Testing...")
 	
