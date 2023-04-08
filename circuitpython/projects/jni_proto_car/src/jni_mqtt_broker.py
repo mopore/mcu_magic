@@ -74,6 +74,7 @@ class MqttBroker:
 		self._keep_running = True
 		self._mqtt_client: mqtt.MQTT | None = None
 		self._first_connect = True
+		print("Connecting to MQTT broker...")
 		self.ensure_mqtt_client()
 		self.last_alive = 0
 	
@@ -86,14 +87,14 @@ class MqttBroker:
 			self._mqtt_client = None
 
 	def on_connect(self, client, userdata, flags, rc) -> None:
-		print(f"Connected to MQTT server ({self._server_ip})")
+		print(f"Connected to MQTT broker ({self._server_ip})")
 		self._connected = True
 	
 	def on_disconnect(self, client, userdata, rc) -> None:
 		if int(rc) == 0:
-			print("Connection to MQTT server closed.")
+			print("Connection to MQTT broker closed.")
 		else:
-			print(f"Lost connection to MQTT server ({self._server_ip}), reason: {rc}")
+			print(f"Lost connection to MQTT broker ({self._server_ip}), reason: {rc}")
 		self._connected = False
 		if self._keep_running:
 			self._state = self.PROBLEM
