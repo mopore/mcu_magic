@@ -13,9 +13,9 @@ def control(engines: list[servo.ContinuousServo], trottle_input: float) -> None:
 
 def main() -> None:
 	pwms: list[pwmio.PWMOut] = [
-		pwmio.PWMOut(board.IO14, frequency=50),  # type: ignore
-		pwmio.PWMOut(board.IO12, frequency=50),  # type: ignore
-		pwmio.PWMOut(board.IO6, frequency=50),  # type: ignore
+		#  pwmio.PWMOut(board.IO14, frequency=50),  # type: ignore
+		#  pwmio.PWMOut(board.IO12, frequency=50),  # type: ignore
+		#  pwmio.PWMOut(board.IO6, frequency=50),  # type: ignore
 		pwmio.PWMOut(board.IO5, frequency=50),  # type: ignore
 	]
 
