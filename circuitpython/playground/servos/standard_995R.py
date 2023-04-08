@@ -13,7 +13,7 @@ def control(engines: list[servo.Servo], angle: int) -> None:
 
 def main() -> None:
 	pwms: list[pwmio.PWMOut] = [
-		pwmio.PWMOut(board.IO12, frequency=50),  # type: ignore
+		pwmio.PWMOut(board.IO6, frequency=50),  # type: ignore
 	]
 
 	engines: list[servo.Servo] = []
@@ -22,6 +22,7 @@ def main() -> None:
 		engines.append(engine)
 
 	angles = [90, 45, 0, 45, 90, 135, 180, 135, 90]
+	# angles = [90, 45, 90, 135, 90]  # For testing as car steering.
 
 	print("Testing...")
 	

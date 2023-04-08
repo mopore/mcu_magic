@@ -15,8 +15,8 @@ def main() -> None:
 	pwms: list[pwmio.PWMOut] = [
 		#  pwmio.PWMOut(board.IO14, frequency=50),  # type: ignore
 		#  pwmio.PWMOut(board.IO12, frequency=50),  # type: ignore
-		#  pwmio.PWMOut(board.IO6, frequency=50),  # type: ignore
-		pwmio.PWMOut(board.IO5, frequency=50),  # type: ignore
+		pwmio.PWMOut(board.IO14, frequency=50),  # type: ignore
+		pwmio.PWMOut(board.IO12, frequency=50),  # type: ignore
 	]
 
 	engines: list[servo.ContinuousServo] = []
@@ -29,13 +29,15 @@ def main() -> None:
 	control(engines, 1.0)
 	time.sleep(2.0)
 	print("stop")
-	control(engines, -0.01)
+	# control(engines, 0)
+	control(engines, 0.01)
 	time.sleep(4.0)
 	print("reverse")
 	control(engines, -1.0)
 	time.sleep(2.0)
 	print("stop")
-	control(engines, -0.01)
+	# control(engines, 0)
+	control(engines, 0.01)
 	time.sleep(4.0)
 
 
