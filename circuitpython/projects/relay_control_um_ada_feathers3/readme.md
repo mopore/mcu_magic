@@ -1,5 +1,5 @@
-RELAY CONTROL ADAFRUIT ESP32 FEATHER V2
-=======================================
+RELAY CONTROL
+=============
 
 - Setup Webflow to prepare MC as deployment platform (see webflow.md)
 - Use the deploy script to deploy
