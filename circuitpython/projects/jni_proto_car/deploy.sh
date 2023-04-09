@@ -34,6 +34,7 @@ question_yes_no() {
 	done
 }
 
+
 # ################################
 # BUILD / PRECOMPILE
 # ################################
@@ -47,8 +48,25 @@ cp -v ./code.py "${PATH_DIST_DIR}/root/code.py"
 if [ -f ./boot.py ]; then
 	cp -v ./boot.py "${PATH_DIST_DIR}/root/boot.py"
 fi
+
+# Preparing a clean log file
+COMPILE_ERR_LOG="compile_error.log"
+> "${COMPILE_ERR_LOG}"
+
 echo "Precompiling and moving project files to dist directory..."
-find . -name "jni_*.py" -exec mpy-cross-7.3.3 {} \; -print
+find . -name "jni_*.py" -exec mpy-cross-7.3.3 {} \; -print 2>"${COMPILE_ERR_LOG}"
+
+# Check if there are any errors
+if [ -s "$COMPILE_ERR_LOG" ]; then
+  printf "\nABORTING: Compilation errors found:\n\n" 
+  cat $COMPILE_ERR_LOG
+  exit 9
+else
+  echo "All files compiled successfully."
+fi
+rm $COMPILE_ERR_LOG
+
+# Copying compiled files to dist folder
 find . -name "jni_*.mpy" -exec mv {} "${PATH_DIST_DIR}/root" \; -print
 cd ..
 
