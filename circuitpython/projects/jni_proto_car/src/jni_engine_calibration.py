@@ -10,13 +10,13 @@ class FrontEngine:
 
 	def __init__(self, pin_id, min_pulse: int, max_pulse: int, reverse: bool) -> None:
 		pwm = pwmio.PWMOut(pin_id, frequency=50)
-		self.c_servo = servo.ContinuousServo(pwm, min_pulse=min_pulse, max_pulse=max_pulse)
-		self.reverse = reverse
+		self._c_servo = servo.ContinuousServo(pwm, min_pulse=min_pulse, max_pulse=max_pulse)
+		self._reverse = reverse
 
 	def control(self, input: float) -> None:
-		if self.reverse:
+		if self._reverse:
 			input = -input
-		self.c_servo.throttle = input
+		self._c_servo.throttle = input
 
 
 class SteeringEngine:
@@ -24,19 +24,19 @@ class SteeringEngine:
 	def __init__(self, pin_id, reverse: bool) -> None:
 		pwm = pwmio.PWMOut(pin_id, frequency=50)
 		# MG 995R servo can go from 0 to 180 degrees.
-		self.s_servo = servo.Servo(pwm, min_pulse=600, max_pulse=2400)
+		self._s_servo = servo.Servo(pwm, min_pulse=600, max_pulse=2400)
 		# Uncalibrated values: Center 90, Left 45 and Right 135
-		self.max_left = 49
-		self.max_right = 139
-		self.reverse = reverse
+		self._max_left = 49
+		self._max_right = 139
+		self._reverse = reverse
 	
 	def control(self, input: float) -> None:
-		if self.reverse:
+		if self._reverse:
 			input = -input
 		# Map input from -1 to 1 to max_left to max_right.
-		angle = int((input + 1) / 2 * (self.max_right - self.max_left) + self.max_left)
+		angle = int((input + 1) / 2 * (self._max_right - self._max_left) + self._max_left)
 		# print(f"Input: {input}, Angle: {angle}")
-		self.s_servo.angle = angle
+		self._s_servo.angle = angle
 
 
 class EngineCalibration:

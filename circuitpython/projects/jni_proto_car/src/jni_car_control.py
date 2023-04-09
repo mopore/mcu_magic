@@ -29,7 +29,7 @@ class CarControl:
 	def __init__(
 		self,
 		service_name: str,
-		onboard_neo: neopixel.NeoPixel,
+		onboard_neo: neopixel.NeoPixel | None = None,
 		dry_mode: bool = False
 	) -> None:
 		self._service_name = service_name
@@ -70,13 +70,15 @@ class CarControl:
 	def switch_panic_mode_on(self):
 		self._panic_mode = True
 		self._engine_management.panic_stop()
-		self._onboard_neo.brightness = settings.LED_FULL
-		self._panic_led_on = True
+		if self._onboard_neo is not None:
+			self._onboard_neo.brightness = settings.LED_FULL
+			self._panic_led_on = True
 	
 	def switch_panic_mode_off(self):
-		self._engine_management.panic_mode = False
-		self._onboard_neo.brightness = settings.LED_LOW
-		self._onboard_neo.fill(settings.LED_GREEN)
+		self._engine_management._panic_mode = False
+		if self._onboard_neo is not None:
+			self._onboard_neo.brightness = settings.LED_LOW
+			self._onboard_neo.fill(settings.LED_GREEN)
 		self._panic_mode = False
 
 	async def loop_async(self):
@@ -105,9 +107,10 @@ class CarControl:
 			self._last_battery_check = now
 
 	def _loop_panic_mode(self):
-		# Blink the onboard LED
-		self._panic_led_on = not self._panic_led_on
-		if self._panic_led_on:
-			self._onboard_neo.fill(settings.LED_RED)
-		else:
-			self._onboard_neo.fill(settings.LED_BLACK)
+		if self._onboard_neo is not None:
+			# Blink the onboard LED
+			self._panic_led_on = not self._panic_led_on
+			if self._panic_led_on:
+				self._onboard_neo.fill(settings.LED_RED)
+			else:
+				self._onboard_neo.fill(settings.LED_BLACK)
