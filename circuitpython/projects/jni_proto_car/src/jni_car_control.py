@@ -25,11 +25,12 @@ class CarControl:
 	
 	EXIT_COMMAND = "exit"
 	
-	def __init__(self, service_name) -> None:
+	def __init__(self, service_name: str, dry_mode: bool = False) -> None:
 		self.service_name = service_name
+		self.dry_mode = dry_mode
 		self._keep_running = True
 		self.input_control = jni_input_control.InputControl() 
-		self.engine_management = jni_engine_management.EngineManagement()
+		self.engine_management = jni_engine_management.EngineManagement(dry_mode)
 		self.last_battery_check = 0
 		self.mqtt_bridge: jni_car_mqtt_bridge.CarMqttBridge | None = None
 		self.pub_topic_battery = f"jniHome/services/{self.service_name}/battery"
