@@ -1,11 +1,21 @@
 import asyncio
 import time
-import jni_car_control
 import jni_input_control
 import random
 
 
-async def fake_input(input_control: jni_input_control.InputControl):
+async def fake_input_grepping(input_control: jni_input_control.InputControl) -> None:
+	print("x;y")
+	while True:
+		x_demand, y_demand = input_control.get_demands()		
+		x = x_demand * 100
+		y = y_demand * 100
+		print(f"{x:.0f};{y:.0f}")
+		input_control.loop()
+		await asyncio.sleep(0.1)
+
+
+async def fake_input_insert(input_control: jni_input_control.InputControl):
 	throttle_duration = 5
 
 	start = time.monotonic()
@@ -15,18 +25,22 @@ async def fake_input(input_control: jni_input_control.InputControl):
 		if time_passed > throttle_duration:
 			keep_running = False
 		else:
-			throttle_input = random.uniform(0.5, 1)
-			input_control.take_input(0, throttle_input)
+			# throttle_input = random.uniform(0.5, 1)
+			steering_input = random.uniform(-1, 0)
+			throttle_input = -1
+			# steering_input = -1
+			input_control.take_input(steering_input, throttle_input)
 			await asyncio.sleep(.2)
+	input_control.take_input(0, 0)
+	await asyncio.sleep(0.5)
 	input_control.take_input(0, 0)
 
 
 async def main() -> None:
-	service_name = "test_service"
-	car_control = jni_car_control.CarControl(service_name, dry_mode=True)
-	car_control_task = asyncio.create_task(car_control.loop_async())
-	fake_input_task = asyncio.create_task(fake_input(car_control._input_control))
-	await asyncio.gather(car_control_task, fake_input_task)
+	input_control = jni_input_control.InputControl()
+	input_task = asyncio.create_task(fake_input_insert(input_control))
+	grep_task = asyncio.create_task(fake_input_grepping(input_control))
+	await asyncio.gather(input_task, grep_task)
 
 
 if __name__ == "__main__":
