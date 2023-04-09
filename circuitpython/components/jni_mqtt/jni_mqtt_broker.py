@@ -8,20 +8,20 @@ import adafruit_minimqtt.adafruit_minimqtt as mqtt
 import jni_wifi
 
 
-class MqttCredentials:
+class Credentials:
 
 	def __init__(self, username: str, password: str) -> None:
 		self.username = username
 		self.password = password
 
 
-class MqttServerInfo:
+class MqttBrokerInfo:
 
 	def __init__(
 		self, 
 		ip: str, 
 		port: int = 1883, 
-		credentials: MqttCredentials | None = None
+		credentials: Credentials | None = None
 	) -> None:
 		self.ip = ip
 		self.port = port
@@ -48,15 +48,15 @@ class MqttBroker:
 
 	def __init__(
 		self, 
-		server_info: MqttServerInfo,
+		broker_info: MqttBrokerInfo,
 		name: str,
 		send_alive: bool = True,
 		message_callback=None, 
 		topic_subscriptions: list[str] | None = None
 	) -> None:
-		self._server_ip = server_info.ip
-		self._server_port = server_info.port
-		self._server_credentials = server_info.credentials
+		self._broker_ip = broker_info.ip
+		self._broker_port = broker_info.port
+		self._broker_credentials = broker_info.credentials
 		self._name = name
 		self._message_callback = message_callback	
 		self._send_alive = send_alive
@@ -73,26 +73,27 @@ class MqttBroker:
 		self._keep_running = True
 		self._mqtt_client: mqtt.MQTT | None = None
 		self._first_connect = True
+		print("Initializing MQTT broker...")
 		self.ensure_mqtt_client()
 		self.last_alive = 0
 	
 	def exit(self) -> None:
 		self._keep_running = False
 		self._state = self.DEAD
-		print(f"Exiting MQTT broker at {self._server_ip}...")
+		print(f"Exiting MQTT broker at {self._broker_ip}...")
 		if self._mqtt_client is not None:
 			self._mqtt_client.disconnect()
 			self._mqtt_client = None
 
 	def on_connect(self, client, userdata, flags, rc) -> None:
-		print(f"Connected to MQTT server ({self._server_ip})")
+		print(f"Connected to MQTT broker ({self._broker_ip})")
 		self._connected = True
 	
 	def on_disconnect(self, client, userdata, rc) -> None:
 		if int(rc) == 0:
-			print("Connection to MQTT server closed.")
+			print("Connection to MQTT broker closed.")
 		else:
-			print(f"Lost connection to MQTT server ({self._server_ip}), reason: {rc}")
+			print(f"Lost connection to MQTT broker ({self._broker_ip}), reason: {rc}")
 		self._connected = False
 		if self._keep_running:
 			self._state = self.PROBLEM
@@ -131,26 +132,26 @@ class MqttBroker:
 				if self._mqtt_client is None:
 					pool = socketpool.SocketPool(wifi.radio)
 					now = time.time()
-					if self._server_credentials is None:
+					if self._broker_credentials is None:
 						self._mqtt_client = mqtt.MQTT(
 							client_id=f"{self._name}{now}",
-							broker=self._server_ip, 
-							port=self._server_port,
+							broker=self._broker_ip, 
+							port=self._broker_port,
 							socket_pool=pool,
 							is_ssl=False,
 							keep_alive=30,
 						)
 					else:
-						print(f"Using credentials for user {self._server_credentials.username}.")
+						print(f"Using credentials for user {self._broker_credentials.username}.")
 						self._mqtt_client = mqtt.MQTT(
 							client_id=f"{self._name}{now}",
-							broker=self._server_ip, 
-							port=self._server_port,
+							broker=self._broker_ip, 
+							port=self._broker_port,
 							socket_pool=pool,
 							is_ssl=False,
 							keep_alive=30,
-							username=self._server_credentials.username,
-							password=self._server_credentials.password,
+							username=self._broker_credentials.username,
+							password=self._broker_credentials.password,
 						)
 					self._mqtt_client.on_connect = self.on_connect  # type: ignore
 					self._mqtt_client.on_disconnect = self.on_disconnect  # type: ignore
@@ -170,7 +171,7 @@ class MqttBroker:
 				self._state = self.OPERATIONAL
 				break  # We are connected
 			except Exception as e:
-				error_message = f"Could not connect to {self._server_ip} due to '{e}'"
+				error_message = f"Could not connect to {self._broker_ip} due to '{e}'"
 				"after attempt No. {connection_attempts}"
 				print(error_message)
 				self._state = self.PROBLEM
