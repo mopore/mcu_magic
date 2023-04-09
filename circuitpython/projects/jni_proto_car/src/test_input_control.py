@@ -25,7 +25,7 @@ async def main() -> None:
 	service_name = "test_service"
 	car_control = jni_car_control.CarControl(service_name, dry_mode=True)
 	car_control_task = asyncio.create_task(car_control.loop_async())
-	fake_input_task = asyncio.create_task(fake_input(car_control.input_control))
+	fake_input_task = asyncio.create_task(fake_input(car_control._input_control))
 	await asyncio.gather(car_control_task, fake_input_task)
 
 

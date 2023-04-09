@@ -1,12 +1,13 @@
 import time
 import asyncio
 import json
+import neopixel
 
 import jni_car_mqtt_bridge
 import jni_feathers3
 import jni_input_control
 import jni_engine_management
-from jni_global_settings import BATTERY_CHECK_FREQUENCY_SECONDS, REFRESH_RATE_HZ
+import jni_global_settings as settings
 
 
 def get_battery_info() -> str: 
@@ -25,18 +26,27 @@ class CarControl:
 	
 	EXIT_COMMAND = "exit"
 	
-	def __init__(self, service_name: str, dry_mode: bool = False) -> None:
-		self.service_name = service_name
-		self.dry_mode = dry_mode
+	def __init__(
+		self,
+		service_name: str,
+		onboard_neo: neopixel.NeoPixel,
+		dry_mode: bool = False
+	) -> None:
+		self._service_name = service_name
+		self._onboard_neo = onboard_neo
+		self._dry_mode = dry_mode
 		self._keep_running = True
-		self.input_control = jni_input_control.InputControl() 
-		self.engine_management = jni_engine_management.EngineManagement(dry_mode)
-		self.last_battery_check = 0
-		self.mqtt_bridge: jni_car_mqtt_bridge.CarMqttBridge | None = None
-		self.pub_topic_battery = f"jniHome/services/{self.service_name}/battery"
-		self.sub_command_topic = f"jniHome/services/{self.service_name}/command"
-		self.sub_input_topic = f"jniHome/services/{self.service_name}/input"
-		self.last_battery_check = 0
+		self._panic_mode = False
+		self._input_control = jni_input_control.InputControl() 
+		self._engine_management = jni_engine_management.EngineManagement(dry_mode)
+		self._last_battery_check = 0
+		self._mqtt_bridge: jni_car_mqtt_bridge.CarMqttBridge | None = None
+		self._last_battery_check = 0
+		self._panic_led_on = False
+
+		self.pub_topic_battery = f"jniHome/services/{self._service_name}/battery"
+		self.sub_command_topic = f"jniHome/services/{self._service_name}/command"
+		self.sub_input_topic = f"jniHome/services/{self._service_name}/input"
 	
 	def get_subs(self) -> list[str]:
 		subs = [
@@ -50,28 +60,54 @@ class CarControl:
 			print(f"Received command: {message}")
 			if message.strip().lower() == self.EXIT_COMMAND:
 				self._keep_running = False
-				if self.mqtt_bridge is not None:
-					self.mqtt_bridge.exit()
+				if self._mqtt_bridge is not None:
+					self._mqtt_bridge.exit()
 		elif topic == self.sub_input_topic:
-			self.input_control.take_json_input(message)
+			self._input_control.take_json_input(message)
 		else:
 			print(f"Received unknown topic: {topic}")
 
+	def switch_panic_mode_on(self):
+		self._panic_mode = True
+		self._engine_management.panic_stop()
+		self._onboard_neo.brightness = settings.LED_FULL
+		self._panic_led_on = True
+	
+	def switch_panic_mode_off(self):
+		self._engine_management.panic_mode = False
+		self._onboard_neo.brightness = settings.LED_LOW
+		self._onboard_neo.fill(settings.LED_GREEN)
+		self._panic_mode = False
+
 	async def loop_async(self):
 		while self._keep_running:
-			self.loop()
-			await asyncio.sleep(1 / REFRESH_RATE_HZ)
+			self._loop()
+			await asyncio.sleep(1 / settings.REFRESH_RATE_HZ)
 	
-	def loop(self):
-		self.input_control.loop()
-		x_demand, y_demand = self.input_control.get_demands()
-		self.engine_management.loop(x_demand, y_demand)
-		self.check_battery()
+	def _loop(self):
+		if self._panic_mode:
+			self._loop_panic_mode()	
+		else:
+			self._loop_default()
 
-	def check_battery(self):
+	def _loop_default(self):
+		self._input_control.loop()
+		x_demand, y_demand = self._input_control.get_demands()
+		self._engine_management.loop(x_demand, y_demand)
+		self._loop_battery_check()
+
+	def _loop_battery_check(self):
 		now = time.monotonic()
-		if now - self.last_battery_check > BATTERY_CHECK_FREQUENCY_SECONDS:
+		if now - self._last_battery_check > settings.BATTERY_CHECK_FREQUENCY_SECONDS:
 			battery_info = get_battery_info()
-			if self.mqtt_bridge is not None:
-				self.mqtt_bridge.publish(self.pub_topic_battery, battery_info)
-			self.last_battery_check = now
+			if self._mqtt_bridge is not None:
+				self._mqtt_bridge.publish(self.pub_topic_battery, battery_info)
+			self._last_battery_check = now
+
+	def _loop_panic_mode(self):
+		# Blink the onboard LED
+		self._panic_led_on = not self._panic_led_on
+		if self._panic_led_on:
+			self._onboard_neo.fill(settings.LED_RED)
+		else:
+			self._onboard_neo.fill(settings.LED_BLACK)
