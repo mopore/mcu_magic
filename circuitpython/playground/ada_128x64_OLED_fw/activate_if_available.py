@@ -5,7 +5,7 @@ import board
 import adafruit_displayio_sh1107
 
 
-def activate_oled_when_present() -> bool:
+def activate_oled_when_present() -> displayio.Display | None:
     try:
         WIDTH = 128
         HEIGHT = 64
@@ -13,9 +13,10 @@ def activate_oled_when_present() -> bool:
         i2c = board.I2C()
         display_bus = displayio.I2CDisplay(i2c, device_address=0x3C)
         display = adafruit_displayio_sh1107.SH1107(display_bus, width=WIDTH, height=HEIGHT)
-        return True
-    except Exception as err:
-        return False
+        return display
+    except Exception:
+        print("Could not find a display.")
+        return None
 
 
 def main() -> None:
