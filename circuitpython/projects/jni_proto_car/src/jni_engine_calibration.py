@@ -49,8 +49,8 @@ class EngineCalibration:
 			reverse=False)
 		self.front_right = FrontEngine(
 			board.IO12,  # type: ignore
-			min_pulse=760,
-			max_pulse=2260,
+			min_pulse=740,
+			max_pulse=2240,
 			reverse=True)
 		self.steering = SteeringEngine(board.IO6, reverse=True)  # type: ignore
 

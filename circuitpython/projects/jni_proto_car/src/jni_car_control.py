@@ -7,6 +7,7 @@ import jni_car_mqtt_bridge
 import jni_feathers3
 import jni_input_control
 import jni_engine_management
+import jni_car_sensors
 import jni_global_settings as settings
 
 
@@ -39,6 +40,7 @@ class CarControl:
 		self._panic_mode = False
 		self._input_control = jni_input_control.InputControl() 
 		self._engine_management = jni_engine_management.EngineManagement(dry_mode)
+		self._sensors = jni_car_sensors.CarSensors()
 		self._last_battery_check = 0
 		self._mqtt_bridge: jni_car_mqtt_bridge.CarMqttBridge | None = None
 		self._last_battery_check = 0
@@ -97,6 +99,7 @@ class CarControl:
 		x_demand, y_demand = self._input_control.get_demands()
 		self._engine_management.loop(x_demand, y_demand)
 		self._loop_battery_check()
+		self._sensors.loop()
 
 	def _loop_battery_check(self):
 		now = time.monotonic()

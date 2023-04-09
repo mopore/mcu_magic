@@ -7,7 +7,7 @@ def calculate_value_change(thresholds: list[float]) -> float:
 	gap = thresholds[1] - thresholds[0]  # Take the first gap as a probe
 	for i in range(1, len(thresholds) - 1):
 		if thresholds[i + 1] - thresholds[i] != gap:
-			raise "Error: thresholds are not equidistant"
+			raise Exception("Error: thresholds are not equidistant")
 	return gap
 	
 
@@ -56,25 +56,24 @@ class InputControl:
 	def loop(self) -> None:
 		time_passed = time.monotonic() - self._last_input_time
 		if time_passed > self.INPUT_DEAD_THRESHOLD_SECS:
-			self._last_x_input = 0
+			# Cut throttle demand due to missing input
 			self._last_y_input = 0
-			self._last_x_output = 0
 			self._last_y_output = 0
-			self._x_trends = [0, 0, 0, 0]
 			self._y_trends = [0, 0, 0, 0]
+			# We do not touch the steering to avoid further problems after input is lost
 
 	def _smooth_inputs(self, raww_input_x: float, raw_input_y: float) -> tuple[float, float]:
 		smoothed_x = self._nearest_threshold(raww_input_x)
-		smoothed_x = self._nearest_threshold(raw_input_y)
+		smoothed_y = self._nearest_threshold(raw_input_y)
 
 		x_trend = self._calculate_trend(smoothed_x, self._last_x_output)
 		self._x_trends.pop(0)
 		self._x_trends.append(x_trend)
-		y_trend = self._calculate_trend(smoothed_x, self._last_y_output)
+		y_trend = self._calculate_trend(smoothed_y, self._last_y_output)
 		self._y_trends.pop(0)
 		self._y_trends.append(y_trend)
 
-		return smoothed_x, smoothed_x
+		return smoothed_x, smoothed_y
 
 	def _binary_search_index(self, value) -> int:
 		low, high = 0, len(self.VALUE_THRESHOLDS)

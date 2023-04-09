@@ -25,15 +25,15 @@ async def fake_input_insert(input_control: jni_input_control.InputControl):
 		if time_passed > throttle_duration:
 			keep_running = False
 		else:
+			steering_input = 0
+			# steering_input = random.uniform(-1, 0)
+			throttle_input = 1
 			# throttle_input = random.uniform(0.5, 1)
-			steering_input = random.uniform(-1, 0)
-			throttle_input = -1
-			# steering_input = -1
 			input_control.take_input(steering_input, throttle_input)
 			await asyncio.sleep(.2)
-	input_control.take_input(0, 0)
-	await asyncio.sleep(0.5)
-	input_control.take_input(0, 0)
+	# input_control.take_input(0, 0)
+	# await asyncio.sleep(0.5)
+	# input_control.take_input(0, 0)
 
 
 async def main() -> None:
