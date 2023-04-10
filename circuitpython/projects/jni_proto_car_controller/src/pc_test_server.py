@@ -1,21 +1,19 @@
-import wifi
-import jni_wifi
-import socketpool
-import time
+import socket
 import struct
 import errno
+import time
 
 
 def main() -> None:
-	print("Connecting to wifi...")
-	jni_wifi.connect_wifi()
-	pool = socketpool.SocketPool(wifi.radio)
-	print(f"My address: {wifi.radio.ipv4_address}")
+	server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-	HOST = str(wifi.radio.ipv4_address)
-	PORT = 8080        # Port to listen on
-	server_socket = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
-	server_socket.bind((HOST, PORT))
+	# Set the socket option to allow reuse of the address
+	server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+	# Bind the socket to the address and port
+	host = '0.0.0.0'  # Listen on all available interfaces
+	port = 8080
+	server_socket.bind((host, port))
 	server_socket.listen(1)
 	while True:
 		print("Waiting for a connection...")
