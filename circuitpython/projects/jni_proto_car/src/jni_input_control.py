@@ -1,4 +1,4 @@
-import json
+import socket
 import time
 
 
@@ -124,3 +124,8 @@ class InputControl:
 				return last_output - self.VALUE_CHANGE
 			else:
 				return last_output
+
+def main() -> None:
+   server_socket = socket.socket.AF_INET, socket.SOCK_STREAM)
+   
+   server_address = ('localhost', 3000)') 
