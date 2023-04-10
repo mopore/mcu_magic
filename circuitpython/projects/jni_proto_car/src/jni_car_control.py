@@ -65,7 +65,7 @@ class CarControl:
 				if self._mqtt_bridge is not None:
 					self._mqtt_bridge.exit()
 		elif topic == self.sub_input_topic:
-			self._input_control.take_json_input(message)
+			self._input_control.take_mqtt_input(message)
 		else:
 			print(f"Received unknown topic: {topic}")
 

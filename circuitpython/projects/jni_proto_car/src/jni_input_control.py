@@ -33,10 +33,10 @@ class InputControl:
 		self._last_x_output = 0
 		self._last_y_output = 0
 
-	def take_json_input(self, json_input: str) -> None:
-		dict_from_json = json.loads(json_input)
-		x: float = dict_from_json["x"]
-		y: float = dict_from_json["y"]
+	def take_mqtt_input(self, raw_input: str) -> None:
+		x_raw, y_raw = raw_input.split(",")
+		x = float(x_raw) / 100
+		y = float(y_raw) / 100
 		self.take_input(x, y)
 
 	def take_input(self, input_x: float, input_y: float) -> None:
