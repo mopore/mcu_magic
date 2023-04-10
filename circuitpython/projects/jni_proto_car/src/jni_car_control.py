@@ -18,7 +18,7 @@ def get_battery_info() -> str:
 		voltage = jni_feathers3.get_battery_voltage()
 
 	json_string = json.dumps({
-		"usbPower": True if on_usbc_power else False,
+		"usbpower": True if on_usbc_power else False,
 		"voltage": voltage})	
 	return json_string
 
