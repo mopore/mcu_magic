@@ -7,12 +7,12 @@ from adafruit_display_text import label
 
 
 WHITE = 0xFFFFFF
+WIDTH = 128
+HEIGHT = 64
 
 
 def activate_oled_when_present() -> displayio.Display | None:
 	try:
-		WIDTH = 128
-		HEIGHT = 64
 		displayio.release_displays()
 		i2c = board.I2C()
 		display_bus = displayio.I2CDisplay(i2c, device_address=0x3C)
@@ -63,6 +63,8 @@ class ControllerDisplay:
 		splash.append(self._x_content)
 		self._y_content = create_label("  n/a", 90, 21)
 		splash.append(self._y_content)
+		self._battery_content = create_label("BATTERY", 82, 54)
+		splash.append(self._battery_content)
 
 	def update_state(self, state: str) -> None:
 		self._state_content.text = state
@@ -72,3 +74,8 @@ class ControllerDisplay:
 		y_val = ljust(str(y), 4)
 		self._x_content.text = f"{x_val}%"
 		self._y_content.text = f"{y_val}%"
+
+	def update_battery(self, text: str) -> None:
+		self._battery_content.text = text
+		new_x = WIDTH - self._battery_content.width
+		self._battery_content.x = new_x

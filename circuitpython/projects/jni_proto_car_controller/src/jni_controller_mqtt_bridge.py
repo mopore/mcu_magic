@@ -1,4 +1,5 @@
 import jni_mqtt_broker
+from jni_global_settings import TARGET_TOPIC
 
 try:
 	from secrets.jni_secrets import secrets
@@ -29,8 +30,9 @@ class ControllerMqttBridge:
 		) 
 		self.message_callback = message_callback	
 	
-	def publish_xy(self, json_string: str) -> None:
-		self._broker.publish("jniHome/services/jniProtoCar/input", json_string)
+	def publish_xy(self, x: int, y: int) -> None:
+		raw_string = f"{x},{y}" 
+		self._broker.publish(TARGET_TOPIC, raw_string)
 	
 	def exit(self) -> None:
 		self._broker.exit()

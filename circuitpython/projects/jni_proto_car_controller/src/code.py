@@ -9,7 +9,7 @@ import microcontroller
 import neopixel
 
 import jni_wifi
-import jni_controller
+import jni_controller_main
 import jni_controller_mqtt_bridge
 from jni_global_settings import LED_YELLOW, LED_RED, LED_GREEN, LED_LOW
 
@@ -29,16 +29,16 @@ async def main() -> None:
 			raise
 
 		service_name = secrets[MQTT_SERVICE_NAME_KEY]
-		controller = jni_controller.Controller(service_name)
+		main = jni_controller_main.ControllerMain(service_name)
 		jni_wifi.connect_wifi()
 		mqtt_bridge = jni_controller_mqtt_bridge.ControllerMqttBridge(
 			service_name, 
-			controller.mqtt_cb, 
-			controller.get_subs()
+			main.mqtt_cb, 
+			main.get_subs()
 		)
-		controller._mqtt_bridge = mqtt_bridge
+		main._mqtt_bridge = mqtt_bridge
 		mqtt_loop_task = asyncio.create_task(mqtt_bridge.loop_async())
-		car_control_task = asyncio.create_task(controller.loop_async())
+		main_task = asyncio.create_task(main.loop_async())
 		onboard_neo.fill(LED_GREEN)
 	except Exception as err:
 		print(f"Setup failed: {err}")
@@ -47,7 +47,7 @@ async def main() -> None:
 		raise err
 
 	try:
-		await asyncio.gather(mqtt_loop_task, car_control_task)
+		await asyncio.gather(mqtt_loop_task, main_task)
 	except Exception as err:
 		print(f"Exception in main loop: {err}")
 		print(traceback.format_exc())

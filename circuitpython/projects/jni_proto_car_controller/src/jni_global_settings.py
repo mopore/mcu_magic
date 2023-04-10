@@ -5,5 +5,6 @@ LED_BLACK = (0, 0, 0)
 LED_FULL = 1
 LED_LOW = 0.03
 
+TARGET_TOPIC = "jniHome/services/jniProtoCar/input"
 BATTERY_CHECK_FREQUENCY_SECONDS = 10
 REFRESH_RATE_HZ = 10
