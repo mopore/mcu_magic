@@ -159,7 +159,7 @@ class JniJoyFw():
 			y_min: int = dict_from_json["y_min"]
 			y_max: int = dict_from_json["y_max"]
 			calibration = Calibration(start_x=start_x, start_y=start_y, x_min=x_min, x_max=x_max, 
-									  y_min=y_min, y_max=y_max)
+				y_min=y_min, y_max=y_max)
 			return calibration
 		else:
 			return None
@@ -239,11 +239,20 @@ class JniJoyFw():
 				self.button_down = False
 
 
-class NormalListener(JniJoyFwListener):
+class SampleListener(JniJoyFwListener):
 	
 	def on_button_a(self) -> None:
 		print("Button A!")
-	
+
+	def on_button_b(self) -> None:
+		print("Button B!")
+
+	def on_button_y(self) -> None:
+		print("Button Y!")
+
+	def on_button_x(self) -> None:
+		print("Button X!")
+
 	def on_move(self, x: int, y: int) -> None:
 		print(f"x: {x}, y: {y}")
 
@@ -257,7 +266,7 @@ def main() -> None:
 		wing.calibrate()
 		print("Calibrated.")
 	print("Normal mode...")
-	wing.set_listener(NormalListener())
+	wing.set_listener(SampleListener())
 	while True:
 		wing.tick()
 		# time.sleep(0.1)
