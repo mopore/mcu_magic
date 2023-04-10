@@ -22,20 +22,27 @@ def main() -> None:
 			client_socket.setblocking(False)
 			print('Connected with', addr)
 			keep_client = True
-			# Receive and print data from the client
+			last_timestamp = time.monotonic()
+			message_counter = 0
+
 			while keep_client:
+				now = time.monotonic()
+				timepassed = now - last_timestamp
 				try:
 					message = bytearray(4)
 					num_bytes = client_socket.recv_into(message)
 					if num_bytes > 0:
+						message_counter += 1
 						x, y = struct.unpack(">hh", message)
 						if x == 999 and y == 999:
 							print("Received end command!")
 							keep_client = False
 							client_socket.close()
 							print("Client socket closed.")
-						else:
-							print(f"Received x:{x}, y:{y}")
+					if timepassed > 1:
+						last_timestamp = now	
+						print(f"{message_counter} messages/second")
+						message_counter = 0
 				except OSError as err:
 					if errno.EAGAIN == err.args[0]:
 						# No data available to read

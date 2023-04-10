@@ -30,15 +30,16 @@ class ControllerMqttBridge:
 		) 
 		self.message_callback = message_callback	
 	
-	def publish_xy(self, x: int, y: int) -> None:
+	def publish_xy_deprecated(self, x: int, y: int) -> None:
 		raw_string = f"{x},{y}" 
 		self._broker.publish(TARGET_TOPIC, raw_string)
+		raise Exception("Deprecated")
 	
 	def exit(self) -> None:
 		self._broker.exit()
 	
-	async def loop_async(self):
-		await self._broker.loop_async()
+	async def loop_async(self, loop_sleeps: float = 1):
+		await self._broker.loop_async(loop_sleeps)
 	
 	def publish(self, topic: str, message: str) -> None:
 		self._broker.publish(topic, message)

@@ -204,10 +204,10 @@ class MqttBroker:
 			return True
 		return False
 	
-	async def loop_async(self):
+	async def loop_async(self, sleep_time: float = 0):
 		while self._keep_running:
 			self.loop()
-			await asyncio.sleep(0)
+			await asyncio.sleep(sleep_time)
 
 	def loop(self):
 		if self.DEAD != self._state and self._keep_running:

@@ -48,8 +48,8 @@ class TestMqttBridge:
 	def exit(self) -> None:
 		self._broker.exit()
 	
-	async def loop_async(self):
-		await self._broker.loop_async()
+	async def loop_async(self, time_sleep: float = .1):
+		await self._broker.loop_async(time_sleep)
 	
 	def publish(self, topic: str, message: str) -> None:
 		self._broker.publish(topic, message)

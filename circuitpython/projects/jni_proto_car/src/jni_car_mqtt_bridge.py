@@ -36,7 +36,7 @@ class CarMqttBridge:
 		self._broker.exit()
 	
 	async def loop_async(self):
-		await self._broker.loop_async()
+		await self._broker.loop_async(1)
 	
 	def publish(self, topic: str, message: str) -> None:
 		self._broker.publish(topic, message)
