@@ -48,12 +48,10 @@ class CarControl:
 
 		self.pub_topic_battery = f"jniHome/services/{self._service_name}/battery"
 		self.sub_command_topic = f"jniHome/services/{self._service_name}/command"
-		self.sub_input_topic = f"jniHome/services/{self._service_name}/input"
 	
 	def get_subs(self) -> list[str]:
 		subs = [
 			self.sub_command_topic,
-			self.sub_input_topic
 		]
 		return subs
 
@@ -64,8 +62,6 @@ class CarControl:
 				self._keep_running = False
 				if self._mqtt_bridge is not None:
 					self._mqtt_bridge.exit()
-		elif topic == self.sub_input_topic:
-			self._input_control.take_mqtt_input(message)
 		else:
 			print(f"Received unknown topic: {topic}")
 
@@ -83,10 +79,10 @@ class CarControl:
 			self._onboard_neo.fill(settings.LED_GREEN)
 		self._panic_mode = False
 
-	async def loop_async(self):
+	async def loop_async(self, sleep_time: float = 0.1):
 		while self._keep_running:
 			self._loop()
-			await asyncio.sleep(1 / settings.REFRESH_RATE_HZ)
+			await asyncio.sleep(sleep_time)
 	
 	def _loop(self):
 		if self._panic_mode:
@@ -95,15 +91,17 @@ class CarControl:
 			self._loop_default()
 
 	def _loop_default(self):
-		self._input_control.loop()
+		now = time.monotonic()
+		self._input_control.loop(now)
 		x_demand, y_demand = self._input_control.get_demands()
 		self._engine_management.loop(x_demand, y_demand)
-		self._loop_battery_check()
-		self._sensors.loop()
+		# FIXME - Check if we need to disable these or put them in their on task
+		# self._loop_battery_check(now)
+		# self._sensors.loop()
 
-	def _loop_battery_check(self):
-		now = time.monotonic()
-		if now - self._last_battery_check > settings.BATTERY_CHECK_FREQUENCY_SECONDS:
+	def _loop_battery_check(self, now: float):
+		time_passed = now - self._last_battery_check
+		if now - time_passed > settings.BATTERY_CHECK_FREQUENCY_SECONDS:
 			battery_info = get_battery_info()
 			if self._mqtt_bridge is not None:
 				self._mqtt_bridge.publish(self.pub_topic_battery, battery_info)

@@ -1,5 +1,5 @@
-import socket
 import time
+import jni_input_socket
 
 
 def calculate_value_change(thresholds: list[float]) -> float:
@@ -32,12 +32,13 @@ class InputControl:
 		self._last_y_input = 0
 		self._last_x_output = 0
 		self._last_y_output = 0
+		self._input_socker: jni_input_socket.InputSocket | None = None
 
-	def take_mqtt_input(self, raw_input: str) -> None:
-		x_raw, y_raw = raw_input.split(",")
-		x = float(x_raw) / 100
-		y = float(y_raw) / 100
-		self.take_input(x, y)
+	# def take_mqtt_input(self, raw_input: str) -> None:
+	# 	x_raw, y_raw = raw_input.split(",")
+	# 	x = float(x_raw) / 100
+	# 	y = float(y_raw) / 100
+	# 	self.take_input(x, y)
 
 	def take_input(self, input_x: float, input_y: float) -> None:
 		smoothed_x, smoothed_y = self._smooth_inputs(input_x, input_y)
@@ -53,8 +54,15 @@ class InputControl:
 		self._last_y_output = smooth_y
 		return self._last_x_output, self._last_y_output
 
-	def loop(self) -> None:
-		time_passed = time.monotonic() - self._last_input_time
+	def set_input_socket(self, input_socket: jni_input_socket.InputSocket) -> None:
+		self._input_socker = input_socket
+
+	def loop(self, now: float) -> None:
+		if self._input_socker is not None:
+			x, y = self._input_socker.get_last_input()
+			self.take_input(x, y)
+
+		time_passed = now - self._last_input_time
 		if time_passed > self.INPUT_DEAD_THRESHOLD_SECS:
 			# Cut throttle demand due to missing input
 			self._last_y_input = 0
@@ -124,7 +132,3 @@ class InputControl:
 				return last_output - self.VALUE_CHANGE
 			else:
 				return last_output
-
-
-def main() -> None:
-	...
