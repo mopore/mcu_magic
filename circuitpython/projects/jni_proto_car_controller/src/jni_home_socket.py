@@ -40,7 +40,7 @@ class HomeSocket:
 
 	async def loop_async(self, loop_sleeps: float = .1):	
 		while self.keep_running:
-			message = struct.pack('>hh', self.x, self.y)
+			message = struct.pack('<bb', self.x, self.y)
 			self.client_socket.send(message)
 			print("Sent message to home.")
 			await asyncio.sleep(loop_sleeps)
