@@ -29,12 +29,12 @@ def main() -> None:
 				now = time.monotonic()
 				timepassed = now - last_timestamp
 				try:
-					message = bytearray(4)
+					message = bytearray(2)
 					num_bytes = client_socket.recv_into(message)
 					if num_bytes > 0:
 						message_counter += 1
-						x, y = struct.unpack(">hh", message)
-						if x == 999 and y == 999:
+						x, y = struct.unpack("<bb", message)  # Little endian, two bytes
+						if x == 99 and y == 99:
 							print("Received end command!")
 							keep_client = False
 							client_socket.close()

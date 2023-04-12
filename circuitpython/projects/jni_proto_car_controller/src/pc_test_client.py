@@ -2,7 +2,7 @@ import socket
 import struct
 
 # SERVER_IP = '192.168.199.245'
-SERVER_IP = '192.168.199.121'
+SERVER_IP = '192.168.199.233'
 SERVER_PORT = 8080
 
 
@@ -23,11 +23,11 @@ def main() -> None:
 		y = int(input('Enter the second integer: '))
 
 		# Send the integers to the server
-		message = struct.pack('>hh', x, y)
+		message = struct.pack('<bb', x, y)  # Little endian, two bytes
 
 		client_socket.send(message)
 		print(f"Sent {message}")
-		if x == 999 and y == 999:
+		if x == 99 and y == 99:
 			break
 
 	# Close the socket
