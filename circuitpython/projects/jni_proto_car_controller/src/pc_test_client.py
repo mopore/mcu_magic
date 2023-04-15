@@ -1,7 +1,6 @@
 import socket
 import struct
 import asyncio
-import random
 import time
 
 SERVER_IP = '192.168.199.245'
@@ -22,6 +21,10 @@ def send_to_server(client_socket: socket.socket, x: int, y: int) -> None:
 async def loop_with_server(client_socket: socket.socket) -> None:
 	start_timestamp = time.monotonic()
 	keep_running = True
+	
+	x_counter = -100
+	y_counter = 100
+
 	while keep_running:
 
 		loop_start_timestamp = time.monotonic()
@@ -30,8 +33,14 @@ async def loop_with_server(client_socket: socket.socket) -> None:
 			print(f"Sending end command after {TIME_TO_LOOP} seconds")
 			send_to_server(client_socket, 99, 99)
 		else:
-			x = random.randint(-100, 100)
-			y = random.randint(-100, 100)
+			x_counter += 1
+			if x_counter > 100:
+				x_counter = -100
+			y_counter -= 1
+			if y_counter < -100:
+				y_counter = 100
+			x = x_counter
+			y = y_counter
 			send_to_server(client_socket, x, y)
 
 		now = time.monotonic()

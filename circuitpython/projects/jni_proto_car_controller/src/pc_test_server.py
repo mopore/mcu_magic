@@ -24,6 +24,13 @@ def read_from_client(client_socket: socket.socket, b: bytearray) -> None | tuple
 			raise err
 
 
+def check_integrity(last_x: int, new_x: int) -> None:
+	if new_x == -100:
+		return
+	if new_x <= last_x:
+		raise Exception(f"Integrity problem: {last_x} >= {new_x}")	
+
+
 def read_client_empty(client_socket: socket.socket, b: bytearray) -> None | tuple[int, int]:
 	response: None | tuple[int, int] = None
 	last_result = read_from_client(client_socket, b)	
@@ -49,14 +56,19 @@ async def loop_with_client(client_socket: socket.socket, addr: socket.AddressInf
 		b = bytearray(2)
 		while keep_client:
 			start_timestamp = time.monotonic()
+			last_x = -101
 			try:
 				result = read_client_empty(client_socket, b)
 				if result is not None:
 					x, y = result
-					# print(f"result is: {x}, {y}")
 					if x == 99 and y == 99:
 						print("Received end command!")
 						keep_client = False
+					else:
+						print(f"result is: {x}, {y}")
+						check_integrity(last_x, x)
+						last_x = x
+						
 			except OSError as err:
 				print(f"Error with client sockert: {err}")
 				keep_client = False
