@@ -26,7 +26,6 @@ async def loop_with_server(client_socket: socket.socket) -> None:
 	y_counter = 100
 
 	while keep_running:
-
 		loop_start_timestamp = time.monotonic()
 		if loop_start_timestamp - start_timestamp > TIME_TO_LOOP:
 			keep_running = False

@@ -8,6 +8,7 @@ import asyncio
 LOOP_TIME_BUDGET = 0.1  # 10 Hz
 CHECK_INTEGRITY = True
 # CHECK_INTEGRITY = False
+TIME_TO_LOOP = 5
 
 
 def read_from_client(client_socket: socket.socket, b: bytearray) -> None | tuple[int, int]:
@@ -42,14 +43,20 @@ def read_client_empty(client_socket: socket.socket, b: bytearray) -> None | tupl
 	while last_result is not None:
 		result = read_from_client(client_socket, b)
 		if result is not None:
+			x, y = result
+			print(f"Loosing: {x}, {y}")
 			response = last_result
 		else:
+			x, y = last_result
+			print(f"using: {x}, {y}")
 			last_result = None
-	
 	return response
 
 
 async def loop_with_client(client_socket: socket.socket, addr: socket.AddressInfo) -> None:
+	client__start_timestamp = time.monotonic()
+	used_packages = 0
+	expected_packages = TIME_TO_LOOP / LOOP_TIME_BUDGET
 	with client_socket:
 		client_socket.setblocking(False)
 		print('Connected with', addr)
@@ -57,17 +64,16 @@ async def loop_with_client(client_socket: socket.socket, addr: socket.AddressInf
 
 		b = bytearray(2)
 		while keep_client:
-			start_timestamp = time.monotonic()
+			loop_start_timestamp = time.monotonic()
 			last_x = -101
 			try:
 				result = read_client_empty(client_socket, b)
 				if result is not None:
 					x, y = result
 					if x == 99 and y == 99:
-						print("Received end command!")
 						keep_client = False
 					else:
-						print(f"Received: {x}, {y}")
+						used_packages += 1
 						if CHECK_INTEGRITY:
 							check_integrity(last_x, x)
 							last_x = x
@@ -75,18 +81,23 @@ async def loop_with_client(client_socket: socket.socket, addr: socket.AddressInf
 			except OSError as err:
 				print(f"Error with client sockert: {err}")
 				keep_client = False
-			if not keep_client:
-				print("Client connection end.")	
-				client_socket.close()
 			now = time.monotonic()
-			timepassed = now - start_timestamp
+			timepassed = now - loop_start_timestamp
 			time_left = LOOP_TIME_BUDGET - timepassed
-			ratio = timepassed / LOOP_TIME_BUDGET
-			print(f"Consumption ratio: {ratio:.2f}")
-			if ratio > 3:
-				raise Exception("System has a speed problem!")
-			if time_left > 0:
-				await asyncio.sleep(time_left)
+			# ratio = timepassed / LOOP_TIME_BUDGET
+			client_time = now - client__start_timestamp
+			if client_time > TIME_TO_LOOP + 1:
+				keep_client = False
+			# if ratio > 3:
+			# 	raise Exception("System has a speed problem!")
+			# if time_left > 0:
+				# await asyncio.sleep(time_left)
+
+	print("Client connection end.")	
+	lost_ratio = ((expected_packages - used_packages) / expected_packages) * 100
+
+	print(f"Lost packages: {lost_ratio:.0f}%")
+	client_socket.close()
 
 
 async def main() -> None:
