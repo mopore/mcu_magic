@@ -6,6 +6,8 @@ import asyncio
 
 # LOOP_TIME_BUDGET = 1  # 1 Hz
 LOOP_TIME_BUDGET = 0.1  # 10 Hz
+CHECK_INTEGRITY = True
+# CHECK_INTEGRITY = False
 
 
 def read_from_client(client_socket: socket.socket, b: bytearray) -> None | tuple[int, int]:
@@ -65,9 +67,10 @@ async def loop_with_client(client_socket: socket.socket, addr: socket.AddressInf
 						print("Received end command!")
 						keep_client = False
 					else:
-						print(f"result is: {x}, {y}")
-						check_integrity(last_x, x)
-						last_x = x
+						print(f"Received: {x}, {y}")
+						if CHECK_INTEGRITY:
+							check_integrity(last_x, x)
+							last_x = x
 						
 			except OSError as err:
 				print(f"Error with client sockert: {err}")
