@@ -9,7 +9,7 @@ class DistanceProvider:
 	def __init__(self) -> None:
 		# Prepare VL53L1X
 		MODE_LONG = 2
-		i2c = board.STEMMA_I2C()  # type: ignore
+		i2c = board.STEMMA_I2C()  # type: ignore # For Adafruit QTPy ESP32-S3
 		vl53 = adafruit_vl53l1x.VL53L1X(i2c)
 		vl53.distance_mode = MODE_LONG
 		vl53.start_ranging()

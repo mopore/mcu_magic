@@ -18,7 +18,8 @@ def main() -> None:
 	MODE_SHORT = 1
 	MODE_LONG = 2
 
-	i2c = board.I2C()
+	# i2c = board.I2C()
+	i2c = board.STEMMA_I2C()  # type: ignore # For Adafruit QTPy ESP32-S3
 	vl53 = adafruit_vl53l1x.VL53L1X(i2c)
 
 	# OPTIONAL: can set non-default values

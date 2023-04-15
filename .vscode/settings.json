@@ -1,9 +1,10 @@
 {
 	"python.analysis.extraPaths": [
-		"./circuitpython/projects/sensor_station",
-		"./circuitpython/playground/battery_on_oled_um",
-		"./circuitpython/playground/mqtt_wifi",
-		"./circuitpython/projects/jni_proto_car/src",
-		"./circuitpython/projects/jni_proto_car_controller/src"
+		// "./circuitpython/projects/sensor_station",
+		"./circuitpython/projects/wardrobe",
+		// "./circuitpython/playground/battery_on_oled_um",
+		// "./circuitpython/playground/mqtt_wifi",
+		// "./circuitpython/projects/jni_proto_car/src",
+		// "./circuitpython/projects/jni_proto_car_controller/src"
 	]
 }
