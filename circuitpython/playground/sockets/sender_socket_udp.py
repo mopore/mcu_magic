@@ -1,4 +1,5 @@
 import wifi
+import asyncio
 import socketpool
 import struct
 import board
@@ -35,27 +36,27 @@ def activate_oled_when_present() -> displayio.Display | None:
 		return None
 
 
-class ClientSocket:
+class Sender:
 
 	def __init__(self) -> None:
-		self.socket_to_server: socketpool.Socket | None = None
+		self.udp_socket: socketpool.Socket | None = None
 
-	def connect_to_server(self) -> None:
+	def open_socket(self) -> None:
 		home_address = (SERVER_IP, SERVER_PORT)
-		print(f"Opening socket to server ({home_address})...")
+		print(f"Opening socket to receiver ({home_address})...")
 		pool = socketpool.SocketPool(wifi.radio)
-		socket_to_server = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
-		socket_to_server.connect(home_address)
-		print("Socket to server opened.")
-		self.socket_to_server = socket_to_server
+		socket_to_receiver = pool.socket(pool.AF_INET, pool.SOCK_DGRAM)
+		socket_to_receiver.connect(home_address)
+		print("Socket to receier opened.")
+		self.udp_socket = socket_to_receiver
 	
-	def sent_to_server(self, x: int, y: int) -> None:
-		if self.socket_to_server is not None:
-			message = struct.pack('<bb', x, y)
-			print(f"Sending: {x}, {y}")
-			self.socket_to_server.send(message)
+	def sent_to_receiver(self, x: int, y: int) -> None:
+		if self.udp_socket is not None:
+			message = struct.pack('<hh', x, y)
+			# print(f"Sending: {x}, {y}")
+			self.udp_socket.send(message)
 
-	def loop_with_server(self, time_budget: float) -> None:	
+	async def loop_async(self, time_budget: float) -> None:	
 		start_timestamp = time.monotonic()
 		keep_running = True
 		
@@ -67,7 +68,7 @@ class ClientSocket:
 			if loop_start_timestamp - start_timestamp > time_budget:
 				keep_running = False
 				print(f"Sending end command after {TIME_TO_LOOP} seconds")
-				self.sent_to_server(99, 99)
+				self.sent_to_receiver(99, 99)
 			else:
 				x_counter += 1
 				if x_counter > 100:
@@ -77,7 +78,7 @@ class ClientSocket:
 					y_counter = 100
 				x = x_counter
 				y = y_counter
-				self.sent_to_server(x, y)
+				self.sent_to_receiver(x, y)
 
 			now = time.monotonic()
 			timepassed = now - loop_start_timestamp
@@ -87,16 +88,17 @@ class ClientSocket:
 			if ratio > 3:
 				raise Exception("System has a speed problem!")
 			if time_left > 0:
-				time.sleep(time_left)
+				await asyncio.sleep(time_left)
 
 
-def main() -> None:
+async def main() -> None:
 	activate_oled_when_present()
 	jni_wifi.connect_wifi()
-	client_socket = ClientSocket()
-	client_socket.connect_to_server()
-	client_socket.loop_with_server(TIME_TO_LOOP)
+	sender = Sender()
+	sender.open_socket()
+	loop_task = asyncio.create_task(sender.loop_async(TIME_TO_LOOP))
+	await asyncio.gather(loop_task)
 
 
 if __name__ == "__main__":
-	main()
+	asyncio.run(main())

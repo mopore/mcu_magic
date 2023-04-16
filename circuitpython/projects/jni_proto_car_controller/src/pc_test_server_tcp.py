@@ -16,7 +16,7 @@ def read_from_client(client_socket: socket.socket, b: bytearray) -> None | tuple
 	try:
 		num_of_bytes = client_socket.recv_into(b)
 		if num_of_bytes > 0:
-			x, y = struct.unpack("<bb", b)  # Little endian, two bytes
+			x, y = struct.unpack("<hh", b)  # Little endian, two bytes
 			return x, y
 	except OSError as err:
 		if errno.EAGAIN == err.args[0]:
@@ -62,7 +62,7 @@ async def loop_with_client(client_socket: socket.socket, addr: socket.AddressInf
 		print('Connected with', addr)
 		keep_client = True
 
-		b = bytearray(2)
+		b = bytearray(4)
 		while keep_client:
 			loop_start_timestamp = time.monotonic()
 			last_x = -101
@@ -95,6 +95,8 @@ async def loop_with_client(client_socket: socket.socket, addr: socket.AddressInf
 
 	print("Client connection end.")	
 	lost_ratio = ((expected_packages - used_packages) / expected_packages) * 100
+	if lost_ratio < 0:
+		lost_ratio = 0
 
 	print(f"Lost packages: {lost_ratio:.0f}%")
 	client_socket.close()
