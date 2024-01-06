@@ -5,9 +5,10 @@ import time
 import asyncio
 
 #  LOOP_TIME_BUDGET = 1  # 1 Hz
-LOOP_TIME_BUDGET = 0.1  # 10 Hz
-CHECK_INTEGRITY = True
-# CHECK_INTEGRITY = False
+#  LOOP_TIME_BUDGET = 0.1  # 10 Hz
+LOOP_TIME_BUDGET = 0.01  # 100 Hz
+#  CHECK_INTEGRITY = True
+CHECK_INTEGRITY = False
 
 
 class UdpServer:
