@@ -12,7 +12,7 @@ class SensorData:
 	def __init__(
 		self,
 		motion_event: MotionEvent | None,
-		light_level: float,
+		light_level: float | None,
 		aq: Airquality | None,
 	) -> None:
 		self.motion_event = motion_event
@@ -40,7 +40,7 @@ class SensorStation:
 				aq = self.aq_provider.get_airquality()
 			data = SensorData(motion_event, light_level, aq)
 		else:
-			data = SensorData(motion_event, 0.0, None)
+			data = SensorData(motion_event, None, None)
 		return data
 
 	def provides_air_quality(self) -> bool:

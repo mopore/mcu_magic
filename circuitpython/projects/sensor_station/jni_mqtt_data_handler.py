@@ -23,8 +23,8 @@ class MqttDataHandler(DataHandler):
 	ALIVE_LED_MAX = 5
 
 	def __init__(
-		self, bridge: MqttBridge, 
-		pixel: neopixel.NeoPixel, 
+		self, bridge: MqttBridge,
+		pixel: neopixel.NeoPixel,
 		button: DigitalInOut
 	) -> None:
 		self.bridge = bridge
@@ -37,7 +37,8 @@ class MqttDataHandler(DataHandler):
 
 	def handle(self, sensor_data: SensorData) -> None:
 		# Publish data
-		self.bridge.publish_light_level(sensor_data.light_level)
+		if sensor_data.light_level is not None:
+			self.bridge.publish_light_level(sensor_data.light_level)
 		if sensor_data.motion_event is not None:
 			self.bridge.publish_motion(sensor_data.motion_event.new_motion)
 		if sensor_data.aq is not None:
@@ -95,7 +96,7 @@ def prepare_datahandler(station_name: str) -> MqttDataHandler | None:
 		print(f"Could not create bridge to MQTT broker: {e}")
 		pixel.fill(LED_RED)
 		disconnect_wifi()
-	
+
 	if bridge is not None:
 		handler = MqttDataHandler(bridge, pixel, button)
 		return handler
@@ -115,7 +116,7 @@ def main() -> None:
 	while True:
 		last_time = time.monotonic()
 		sensor_data = station.collect_data()
-		mqtt_handler.handle(sensor_data)	
+		mqtt_handler.handle(sensor_data)
 		time_diff = time.monotonic() - last_time
 		time_to_sleep = FREQUENCE_SECS - time_diff
 		if time_to_sleep < 0:

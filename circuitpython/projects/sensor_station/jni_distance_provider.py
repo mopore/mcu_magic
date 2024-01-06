@@ -7,72 +7,122 @@ import adafruit_vl53l1x
 from jni_motion_types import MotionEventProvider, MotionEvent
 
 
-class DistanceMotionEventProvider(MotionEventProvider):
+class MotionDetector:
 
-	TRIGGER_DISTANCE_CM = 150
-	NEW_MOTION_TIME_THRESHOLD = 6
 	INIT_VALUE = -1
+	TOLERANCE_CM = 15
 
 	def __init__(self) -> None:
-		MODE_LONG = 2
+		self.baseline: None | int = None
+		self.candidate: None | int = None
+		self.new_motion_detected = False
 
+	def read(self, raw: float | None) -> None | int:
+		if raw is None:
+			return
+		current = int(raw)
+
+		if self.baseline is None:
+			self.baseline = current
+		else:
+			if self.candidate is None:
+				diff_baseline = abs(current - self.baseline)
+				new_candidate = diff_baseline > self.TOLERANCE_CM
+				if new_candidate:
+					self.candidate = current
+			else:
+				diff_confirmation = abs(current - self.baseline)
+				candidate_confirmed = diff_confirmation > self.TOLERANCE_CM
+				if candidate_confirmed:
+					self.baseline = current
+					self.candidate = None
+					self.new_motion_detected = True
+				else:
+					self.candidate = None
+
+		return current
+
+	def is_motion_detected(self) -> bool:
+		if self.new_motion_detected:
+			self.new_motion_detected = False
+			return True
+		return False
+
+
+class DistanceMotionEventProvider(MotionEventProvider):
+
+	NEW_MOTION_TIME_THRESHOLD = 6
+	TRIGGER_DISTANCE_CM = 150
+	MODE_LONG = 2
+
+	def __init__(self) -> None:
+		self.last_motion_trigger = 0
+		self.detector = MotionDetector()
+
+		print("Initializing VL53L1X sensor...")
+		# For Adafruit Qt Py ESP32-S3 we need the STEMMA_I2C
+		# Default would be I2C
+		#
 		# i2c = board.I2C()
 		i2c = board.STEMMA_I2C()  # type: ignore
-
 		vl53 = adafruit_vl53l1x.VL53L1X(i2c)
-		vl53.distance_mode = MODE_LONG
-		vl53.timing_budget = 100
+		vl53.distance_mode = self.MODE_LONG
+		vl53.timing_budget = 200
 		vl53.start_ranging()
-		self.sensor = vl53
+		self.vl53 = vl53
 
-		self.last_reading: None | float = self.INIT_VALUE
-		self.last_new_motion_timestamp = 0
-		self.current_motion = False
+		print("Testing distance sensor...")
+		first_reading = False
+		while not first_reading:
+			if self.vl53.data_ready:
+				self.younger_reading = self.vl53.distance
+				first_reading = True
+				self.vl53.clear_interrupt()
 
-	def _read_distance(self) -> float | None:
-		while not self.sensor.data_ready:
-			pass
-		result = self.sensor.distance
-		self.sensor.clear_interrupt()
-		return result
+		self.in_motion = False
+		print("Distance sensor is set up.")
 
+	# The caller of this function expects three possible return scenarios:
+	# - None: No motion event
+	# - MotionEvent(MotionEvent.MOTION_GONE)
+	# - MotionEvent(MotionEvent.NEW_MOTION)
+	#
+	# The function is intended to be called in a loop every 0.24 seconds.
 	def get_motion_event(self) -> MotionEvent | None:
-		reading = self._read_distance()
 		motion_event: MotionEvent | None = None
-		if self.last_reading == self.INIT_VALUE:
-			self.last_reading = reading
-		movement_now = False
-		if reading is not None and reading < self.TRIGGER_DISTANCE_CM:
-			if self.last_reading is None:
-				movement_now = True
-				motion_event = self._when_movement_now()
-			else:    
-				# Check if not a static object is present
-				diff = self.last_reading - reading
-				if abs(diff) > 2: 
+		now_reading: None | float = None
+		if self.vl53.data_ready:
+			now_reading = self.detector.read(self.vl53.distance)
+			self.vl53.clear_interrupt()
+
+			movement_now = False
+
+			if now_reading is not None and now_reading < self.TRIGGER_DISTANCE_CM:
+				if self.detector.is_motion_detected():
 					movement_now = True
 					motion_event = self._when_movement_now()
-		if movement_now is False and self.current_motion is True:
-			current_timestamp = time.time()
-			time_after_trigger = current_timestamp - self.last_new_motion_timestamp
-			if time_after_trigger > self.NEW_MOTION_TIME_THRESHOLD:
-				self.current_motion = False
-				motion_event = MotionEvent(MotionEvent.MOTION_GONE)
-		self.last_reading = reading
+
+			if self.in_motion and not movement_now:
+				current_timestamp = time.time()
+				time_after_trigger = current_timestamp - self.last_motion_trigger
+				if time_after_trigger > self.NEW_MOTION_TIME_THRESHOLD:
+					self.in_motion = False
+					print("Motion is gone. Will trigger callback...")
+					motion_event = MotionEvent(MotionEvent.MOTION_GONE)
+
+			self.older_reading = self.younger_reading
+			self.younger_reading = now_reading
 		return motion_event
-	
+
 	def _when_movement_now(self) -> MotionEvent | None:
 		motion_event: MotionEvent | None = None
-		try:
-			self.last_new_motion_timestamp = time.time()
-			if self.current_motion is False:
-				self.current_motion = True
-				motion_event = MotionEvent(MotionEvent.NEW_MOTION)
-		except Exception as e:
-			error_message = f"Error with Motion Handler when handling motion: {e}"
-			raise Exception(error_message)
+		self.last_motion_trigger = time.time()
+		if self.in_motion is False:
+			self.in_motion = True
+			print("New Motion detected.")
+			motion_event = MotionEvent(MotionEvent.NEW_MOTION)
 		return motion_event
-		
+
 
 def main() -> None:
 	provider = DistanceMotionEventProvider()

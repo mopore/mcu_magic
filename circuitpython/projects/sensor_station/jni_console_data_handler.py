@@ -22,7 +22,8 @@ class ConsoleDataHandler(DataHandler):
 			if self.present:
 				motion_text = "(present)"
 		print(f"Motion: {motion_text}")
-		print(f"Light level: {sensor_data.light_level:.1f} Lumen")
+		if sensor_data.light_level is not None:
+			print(f"Light level: {sensor_data.light_level:.1f} Lumen")
 		if sensor_data.aq is not None:
 			print("CO2: %d ppm" % sensor_data.aq.co2)
 			print("Temperature: %0.1f *C" % sensor_data.aq.temperature)
