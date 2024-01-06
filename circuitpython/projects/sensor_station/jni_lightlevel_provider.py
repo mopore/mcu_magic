@@ -8,16 +8,16 @@ import adafruit_bh1750
 
 
 class LightlevelProvider:
-    
+
     def __init__(self) -> None:
         #  i2c = board.I2C()
         i2c = board.STEMMA_I2C()  # type: ignore
         sensor = adafruit_bh1750.BH1750(i2c)
         self.sensor = sensor
-    
+
     def get_lightlevel(self) -> float:
         return self.sensor.lux
-    
+
 
 def main() -> None:
     provider = LightlevelProvider()

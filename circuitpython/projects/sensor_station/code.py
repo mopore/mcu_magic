@@ -43,15 +43,18 @@ def main() -> None:
 			pixel.fill(LED_RED)
 			time.sleep(0.3)
 		raise e
-	
+
 	mqtt_handler = prepare_datahandler(station_name)
 	if mqtt_handler is not None:
 		handlers.append(mqtt_handler)
 
-	FREQUENCE_SECS = 0.5
+	FREQUENCE_SECS = 0.25
+	fulltick = True
+	# We need a higher frequency for motion detection so I reduced the original
+	# value from 0.5 to 0.25 seconds and introduced the fulltick variable.
 	while True:
 		last_timestamp = time.monotonic()
-		sensor_data = station.collect_data()
+		sensor_data = station.collect_data(fulltick)
 		for handler in handlers:
 			handler.handle(sensor_data)
 
@@ -62,6 +65,7 @@ def main() -> None:
 			print("Did not have any time to sleep!")
 		# print(f"Time difference to sleep: {time_to_sleep:.1f} secs")
 		time.sleep(time_to_sleep)
+		fulltick = not fulltick
 
 
 if __name__ == "__main__":

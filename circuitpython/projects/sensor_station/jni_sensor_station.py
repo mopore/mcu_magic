@@ -10,9 +10,9 @@ from jni_lightlevel_provider import LightlevelProvider
 class SensorData:
 
 	def __init__(
-		self, 
+		self,
 		motion_event: MotionEvent | None,
-		light_level: float, 
+		light_level: float,
 		aq: Airquality | None,
 	) -> None:
 		self.motion_event = motion_event
@@ -30,13 +30,17 @@ class SensorStation:
 			print(f"Could not find an air quality provider: {e}")
 		self.light_provider = LightlevelProvider()
 
-	def collect_data(self) -> SensorData:
+	def collect_data(self, fulltick: bool) -> SensorData:
 		motion_event = self.motion_provider.get_motion()
-		light_level = self.light_provider.get_lightlevel()
-		aq: Airquality | None = None
-		if self.aq_provider is not None:
-			aq = self.aq_provider.get_airquality()
-		data = SensorData(motion_event, light_level, aq)
+		data: SensorData | None = None
+		if fulltick:
+			light_level = self.light_provider.get_lightlevel()
+			aq: Airquality | None = None
+			if self.aq_provider is not None:
+				aq = self.aq_provider.get_airquality()
+			data = SensorData(motion_event, light_level, aq)
+		else:
+			data = SensorData(motion_event, 0.0, None)
 		return data
 
 	def provides_air_quality(self) -> bool:

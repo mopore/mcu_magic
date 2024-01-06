@@ -6,7 +6,7 @@ import adafruit_scd4x
 
 
 class Airquality:
-    
+
     def __init__(self, co2: int, temperature: float, humidity: float) -> None:
         self.co2 = co2
         self.temperature = temperature
@@ -27,13 +27,13 @@ class AirqualityProvider:
             co2 = self.scd4x.CO2
             temp = self.scd4x.temperature
             hum = self.scd4x.relative_humidity
-            
+
             return Airquality(co2, temp, hum)
 
 
 def main() -> None:
     provider = AirqualityProvider()
-        
+
     while True:
         aq = provider.get_airquality()
         if aq is not None:

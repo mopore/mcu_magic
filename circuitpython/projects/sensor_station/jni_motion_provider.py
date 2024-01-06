@@ -14,7 +14,7 @@ class MotionProvider:
 		if event_provider is None:
 			print("Searching for PIR motion event provider...")
 			event_provider = PirMotionEventProvider()
-			print("PIR motion event provider found")	
+			print("PIR motion event provider found")
 		if event_provider is None:
 			raise Exception("Could not find a motion event provider!")
 		self.event_provider = event_provider
