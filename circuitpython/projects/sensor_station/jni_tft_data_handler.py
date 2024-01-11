@@ -93,7 +93,7 @@ def main() -> None:
 	FREQUENCE_SECS = 1
 	while True:
 		last_time = time.monotonic()
-		sensor_data = station.collect_data(True)
+		sensor_data = station.collect_data(True, last_time)
 		tft_handler.handle(sensor_data, last_time)	
 		time_diff = time.monotonic() - last_time
 		time_to_sleep = FREQUENCE_SECS - time_diff

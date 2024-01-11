@@ -50,6 +50,7 @@ def main() -> None:
 
 	FREQUENCE_SECS = 0.21
 	tickCounter = 0
+
 	# We need a higher frequency for motion detection so I reduced the original
 	# value from 0.5 to 0.21 seconds and introduced the fulltick variable.
 	while True:

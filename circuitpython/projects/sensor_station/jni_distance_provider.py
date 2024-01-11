@@ -133,7 +133,7 @@ class DistanceMotionEventProvider(MotionEventProvider):
 def main() -> None:
 	provider = DistanceMotionEventProvider()
 	while True:
-		result = provider._read_distance()
+		result = provider.get_motion_event()
 		if result is not None:
 			print(f"Distance: {result} cm")
 		else:
