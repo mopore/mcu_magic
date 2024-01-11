@@ -14,7 +14,8 @@ class MotionDetector:
 
 	def __init__(self) -> None:
 		self.baseline: None | int = None
-		self.candidate: None | int = None
+		self.candidate1: None | int = None
+		self.candidate2: None | int = None
 		self.new_motion_detected = False
 
 	def read(self, raw: float | None) -> None | int:
@@ -25,21 +26,26 @@ class MotionDetector:
 		if self.baseline is None:
 			self.baseline = current
 		else:
-			if self.candidate is None:
-				diff_baseline = abs(current - self.baseline)
-				new_candidate = diff_baseline > self.TOLERANCE_CM
-				if new_candidate:
-					self.candidate = current
-			else:
+			if self.candidate1 is None:
+				diff_baseline1 = abs(current - self.baseline)
+				new_candidate1 = diff_baseline1 > self.TOLERANCE_CM
+				if new_candidate1:
+					self.candidate1 = current
+			elif self.candidate2 is None:
+				diff_baseline2 = abs(current - self.baseline)
+				new_candidate2 = diff_baseline2 > self.TOLERANCE_CM
+				if new_candidate2:
+					self.candidate2 = current
+				else:
+					self.candidate1 = None
+			else:  # candidate1 and candidate2 are set
 				diff_confirmation = abs(current - self.baseline)
 				candidate_confirmed = diff_confirmation > self.TOLERANCE_CM
 				if candidate_confirmed:
 					self.baseline = current
-					self.candidate = None
 					self.new_motion_detected = True
-				else:
-					self.candidate = None
-
+				self.candidate1 = None
+				self.candidate2 = None
 		return current
 
 	def is_motion_detected(self) -> bool:

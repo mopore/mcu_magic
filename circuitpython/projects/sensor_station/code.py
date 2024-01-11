@@ -48,12 +48,18 @@ def main() -> None:
 	if mqtt_handler is not None:
 		handlers.append(mqtt_handler)
 
-	FREQUENCE_SECS = 0.25
-	fulltick = True
+	FREQUENCE_SECS = 0.21
+	tickCounter = 0
 	# We need a higher frequency for motion detection so I reduced the original
-	# value from 0.5 to 0.25 seconds and introduced the fulltick variable.
+	# value from 0.5 to 0.21 seconds and introduced the fulltick variable.
 	while True:
 		last_timestamp = time.monotonic()
+		
+		tickCounter += 1
+		fulltick = False
+		if tickCounter == 3:
+			fulltick = True	
+			tickCounter = 0
 		sensor_data = station.collect_data(fulltick)
 		for handler in handlers:
 			handler.handle(sensor_data)
