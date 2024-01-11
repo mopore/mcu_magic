@@ -9,7 +9,7 @@ class ConsoleDataHandler(DataHandler):
 	def __init__(self) -> None:
 		self.present = False
 
-	def handle(self, sensor_data: SensorData) -> None:
+	def handle(self, sensor_data: SensorData, now: float) -> None:
 		motion_text = "-"
 		if sensor_data.motion_event is not None:
 			if sensor_data.motion_event.new_motion is MotionEvent.NEW_MOTION:
@@ -38,8 +38,8 @@ def main() -> None:
 	FREQUENCE_SECS = 1
 	while True:
 		last_time = time.monotonic()
-		sensor_data = station.collect_data()
-		console_handler.handle(sensor_data)	
+		sensor_data = station.collect_data(True)
+		console_handler.handle(sensor_data, last_time)	
 		time_diff = time.monotonic() - last_time
 		time_to_sleep = FREQUENCE_SECS - time_diff
 		if time_to_sleep < 0:

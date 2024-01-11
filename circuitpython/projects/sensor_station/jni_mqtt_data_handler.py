@@ -35,7 +35,7 @@ class MqttDataHandler(DataHandler):
 		self.show_led = False  # Initially there is no blinking to indicate an active connection
 		self.button_ready = True
 
-	def handle(self, sensor_data: SensorData) -> None:
+	def handle(self, sensor_data: SensorData, now: float) -> None:
 		# Publish data
 		if sensor_data.light_level is not None:
 			self.bridge.publish_light_level(sensor_data.light_level)
@@ -47,7 +47,6 @@ class MqttDataHandler(DataHandler):
 			self.bridge.publish_temperature(sensor_data.aq.temperature)
 
 		# Publish alive tick
-		now = time.monotonic()
 		time_after_tick = now - self.last_tick
 		if time_after_tick > self.ALIVE_TICK_INTERVAL:
 			self.bridge.publish_alive_tick()
@@ -115,8 +114,8 @@ def main() -> None:
 	FREQUENCE_SECS = 0.5
 	while True:
 		last_time = time.monotonic()
-		sensor_data = station.collect_data()
-		mqtt_handler.handle(sensor_data)
+		sensor_data = station.collect_data(True)
+		mqtt_handler.handle(sensor_data, last_time)
 		time_diff = time.monotonic() - last_time
 		time_to_sleep = FREQUENCE_SECS - time_diff
 		if time_to_sleep < 0:

@@ -60,9 +60,9 @@ def main() -> None:
 		if tickCounter == 3:
 			fulltick = True	
 			tickCounter = 0
-		sensor_data = station.collect_data(fulltick)
+		sensor_data = station.collect_data(fulltick, last_timestamp)
 		for handler in handlers:
-			handler.handle(sensor_data)
+			handler.handle(sensor_data, last_timestamp)
 
 		time_diff = time.monotonic() - last_timestamp
 		time_to_sleep = FREQUENCE_SECS - time_diff

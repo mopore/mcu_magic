@@ -30,14 +30,14 @@ class SensorStation:
 			print(f"Could not find an air quality provider: {e}")
 		self.light_provider = LightlevelProvider()
 
-	def collect_data(self, fulltick: bool) -> SensorData:
+	def collect_data(self, fulltick: bool, now: float) -> SensorData:
 		motion_event = self.motion_provider.get_motion()
 		data: SensorData | None = None
 		if fulltick:
 			light_level = self.light_provider.get_lightlevel()
 			aq: Airquality | None = None
 			if self.aq_provider is not None:
-				aq = self.aq_provider.get_airquality()
+				aq = self.aq_provider.get_airquality(now)
 			data = SensorData(motion_event, light_level, aq)
 		else:
 			data = SensorData(motion_event, None, None)

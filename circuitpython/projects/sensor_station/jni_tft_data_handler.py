@@ -48,8 +48,8 @@ class TftDataHandler(DataHandler):
 		self.last_draw = time.monotonic()
 		self.present = False
 
-	def handle(self, sensor_data: SensorData) -> None:
-		time_passed = time.monotonic() - self.last_draw
+	def handle(self, sensor_data: SensorData, now: float) -> None:
+		time_passed = now - self.last_draw
 		if time_passed > 1:
 			motion_text = "-"
 			if sensor_data.motion_event is not None:
@@ -93,8 +93,8 @@ def main() -> None:
 	FREQUENCE_SECS = 1
 	while True:
 		last_time = time.monotonic()
-		sensor_data = station.collect_data()
-		tft_handler.handle(sensor_data)	
+		sensor_data = station.collect_data(True)
+		tft_handler.handle(sensor_data, last_time)	
 		time_diff = time.monotonic() - last_time
 		time_to_sleep = FREQUENCE_SECS - time_diff
 		if time_to_sleep < 0:
