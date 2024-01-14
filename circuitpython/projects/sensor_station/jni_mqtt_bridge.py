@@ -190,7 +190,7 @@ class MqttBridge:
 			error_message = f"Error publishing light level to MQTT server: {e}"
 			self._handle_error(error_message)
 
-	def publish_motion(self, motion_started: bool):
+	def publish_motion(self, motion_started: bool, motion_proof: str) -> None:
 		if not self._self_check():
 			print("MQTT not operational, not publishing motion.")
 			return
@@ -198,15 +198,19 @@ class MqttBridge:
 			now = datetime.now()
 			javascript_date_string = now.isoformat()
 
-			json_string = json.dumps({"start": motion_started, "end": not motion_started, 
-				"utcTime": javascript_date_string})
+			json_string = json.dumps({
+				"start": motion_started,
+				"end": not motion_started,
+				"utcTime": javascript_date_string,
+				"proof": motion_proof,
+			})
 
 			self.ensure_mqtt_client()
 			self.mqtt_client.publish(self.TOPIC_MOTION, json_string)
 		except Exception as e:
 			error_message = f"Error publishing motion to MQTT server: {e}"
 			self._handle_error(error_message)
-	
+
 	def publish_alive_tick(self):
 		if not self._self_check():
 			print("MQTT not operational, not publishing alive tick.")
@@ -217,7 +221,7 @@ class MqttBridge:
 		except Exception as e:
 			error_message = f"Error publishing alive tick to MQTT server: {e}"
 			self._handle_error(error_message)
-	
+
 	def _self_check(self) -> bool:
 		if self.state == self.PROBLEM:
 			print("Problem detected. Trying to repair...")

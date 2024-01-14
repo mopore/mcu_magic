@@ -19,6 +19,6 @@ class MotionProvider:
 			raise Exception("Could not find a motion event provider!")
 		self.event_provider = event_provider
 
-	def get_motion(self) -> MotionEvent | None:
-		motion_event = self.event_provider.get_motion_event()
-		return motion_event
+	def get_motion(self) -> (MotionEvent, str) | None:
+		motion_event, proof = self.event_provider.get_motion_event()
+		return motion_event, proof

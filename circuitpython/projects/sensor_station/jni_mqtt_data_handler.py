@@ -40,7 +40,11 @@ class MqttDataHandler(DataHandler):
 		if sensor_data.light_level is not None:
 			self.bridge.publish_light_level(sensor_data.light_level)
 		if sensor_data.motion_event is not None:
-			self.bridge.publish_motion(sensor_data.motion_event.new_motion)
+			new_motion = sensor_data.motion_event.new_motion
+			proof = sensor_data.proof
+			if proof is None:
+				proof = "<no proof provided>"
+			self.bridge.publish_motion(new_motion, proof)
 		if sensor_data.aq is not None:
 			self.bridge.publish_co2(sensor_data.aq.co2)
 			self.bridge.publish_humidity(sensor_data.aq.humidity)

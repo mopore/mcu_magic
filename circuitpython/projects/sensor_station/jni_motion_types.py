@@ -9,5 +9,5 @@ class MotionEvent():
 
 class MotionEventProvider:
 
-	def get_motion_event(self) -> MotionEvent | None:
+	def get_motion_event(self) -> (MotionEvent, str) | None:
 		...

@@ -24,7 +24,7 @@ class PirMotionEventProvider(MotionEventProvider):
 		self.motion_pin = motion_pin
 		self.okay = True
 
-	def get_motion_event(self) -> MotionEvent | None:
+	def get_motion_event(self) -> (MotionEvent | str) | None:
 		motion_event: MotionEvent | None = None
 		pin_value = self.motion_pin.value
 		if pin_value is self.MOTION_YES:
@@ -35,7 +35,7 @@ class PirMotionEventProvider(MotionEventProvider):
 			if time_after_trigger > self.NEW_MOTION_TIME_THRESHOLD:
 				self.current_motion = self.MOTION_NO
 				motion_event = MotionEvent(MotionEvent.MOTION_GONE)
-		return motion_event
+		return motion_event, "<no proof provided>"
 
 	def _when_motion(self) -> MotionEvent | None:
 		motion_event: MotionEvent | None = None
@@ -48,12 +48,12 @@ class PirMotionEventProvider(MotionEventProvider):
 				self.current_motion = True
 				motion_event = MotionEvent(MotionEvent.NEW_MOTION)
 		return motion_event
-		
+
 
 def main() -> None:
 	provider = PirMotionEventProvider()
 	while True:
-		result = provider.get_motion_event()
+		result, _ = provider.get_motion_event()
 		if result is not None:
 			if result.new_motion is MotionEvent.NEW_MOTION:
 				print("New Motion!")

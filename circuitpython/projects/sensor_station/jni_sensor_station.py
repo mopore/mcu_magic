@@ -14,10 +14,12 @@ class SensorData:
 		motion_event: MotionEvent | None,
 		light_level: float | None,
 		aq: Airquality | None,
+		motion_proof: str | None = None,
 	) -> None:
 		self.motion_event = motion_event
 		self.light_level = light_level
 		self.aq = aq
+		self.proof = motion_proof
 
 
 class SensorStation:
@@ -31,16 +33,16 @@ class SensorStation:
 		self.light_provider = LightlevelProvider()
 
 	def collect_data(self, fulltick: bool, now: float) -> SensorData:
-		motion_event = self.motion_provider.get_motion()
+		motion_event, proof = self.motion_provider.get_motion()
 		data: SensorData | None = None
 		if fulltick:
 			light_level = self.light_provider.get_lightlevel()
 			aq: Airquality | None = None
 			if self.aq_provider is not None:
 				aq = self.aq_provider.get_airquality(now)
-			data = SensorData(motion_event, light_level, aq)
+			data = SensorData(motion_event, light_level, aq, proof)
 		else:
-			data = SensorData(motion_event, None, None)
+			data = SensorData(motion_event, None, None, proof)
 		return data
 
 	def provides_air_quality(self) -> bool:
