@@ -11,7 +11,6 @@ import board
 from jni_mqtt_data_handler import prepare_datahandler
 from jni_sensor_station import SensorStation
 from jni_data_handler import DataHandler
-from jni_console_data_handler import ConsoleDataHandler
 # from jni_tft_data_handler import TftDataHandler
 
 
@@ -19,10 +18,11 @@ def main() -> None:
 	LED_RED = (255, 0, 0)
 	LED_ORANGE = (255, 165, 0)
 
+	np = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
 	handlers: list[DataHandler] = []
 	station_name = "teststation"
 	try:
-		station = SensorStation()
+		station = SensorStation(np)
 		features_airquality = station.provides_air_quality()
 
 		if features_airquality:
@@ -36,15 +36,14 @@ def main() -> None:
 		# handlers.append(TftDataHandler())
 	except Exception as e:
 		print(f"FATAL: Could not create essential services! {e}")
-		pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
 		for _ in range(5):
-			pixel.fill(LED_ORANGE)
+			np.fill(LED_ORANGE)
 			time.sleep(0.3)
-			pixel.fill(LED_RED)
+			np.fill(LED_RED)
 			time.sleep(0.3)
 		raise e
 
-	mqtt_handler = prepare_datahandler(station_name)
+	mqtt_handler = prepare_datahandler(station_name, np)
 	if mqtt_handler is not None:
 		handlers.append(mqtt_handler)
 

@@ -2,6 +2,7 @@
 
 import time
 import board
+import neopixel
 import adafruit_vl53l1x
 
 from jni_motion_types import MotionEventProvider, MotionEvent
@@ -12,58 +13,86 @@ class MotionDetector:
 	INIT_VALUE = -1
 	TOLERANCE_CM = 15
 
-	def __init__(self) -> None:
-		self.baseline: None | int = None
-		self.candidate1: None | int = None
-		self.candidate2: None | int = None
+	def __init__(self, baseline: float, vl53) -> None:
+		self.baseline = baseline
 		self.new_motion_detected = False
+		self.proofText: str | None = None
+		self.vl53 = vl53
 
-	def read(self, raw: float | None) -> None | int:
-		if raw is None:
-			return
-		current = int(raw)
+	def read(self, first: float | None) -> None | float:
+		if self._value_fails(first):
+			return None
+			
+		second = self._readNext()
+		if self._value_fails(second):
+			return None
 
-		if self.baseline is None:
-			self.baseline = current
-		else:
-			if self.candidate1 is None:
-				diff_baseline1 = abs(current - self.baseline)
-				new_candidate1 = diff_baseline1 > self.TOLERANCE_CM
-				if new_candidate1:
-					self.candidate1 = current
-			elif self.candidate2 is None:
-				diff_baseline2 = abs(current - self.baseline)
-				new_candidate2 = diff_baseline2 > self.TOLERANCE_CM
-				if new_candidate2:
-					self.candidate2 = current
-				else:
-					self.candidate1 = None
-			else:  # candidate1 and candidate2 are set
-				diff_confirmation = abs(current - self.baseline)
-				candidate_confirmed = diff_confirmation > self.TOLERANCE_CM
-				if candidate_confirmed:
-					self.baseline = current
-					self.new_motion_detected = True
-				self.candidate1 = None
-				self.candidate2 = None
-		return current
+		third = self._readNext()
+		if self._value_fails(third):
+			return None
 
-	def is_motion_detected(self) -> bool:
+		self.proofText = f"base {self.baseline}cm,  1: {first}cm,  2: {second}cm,  3: {third}cm"
+		self.new_motion_detected = True	
+		return first
+
+	def collect_motion_detected(self) -> str | None:
 		if self.new_motion_detected:
 			self.new_motion_detected = False
+			return self.proofText
+		return None
+
+	def _value_fails(self, first: float | None) -> bool:
+		if first is None:
 			return True
+
+		if first > self.baseline:
+			return True
+
+		diff_candidate1 = abs(first - self.baseline)
+		if diff_candidate1 < self.TOLERANCE_CM:
+			return True
+		
 		return False
+
+	def _readNext(self) -> float | None:
+		time.sleep(0.1)
+		failCounter = 0
+		while failCounter < 3:
+			if self.vl53.data_ready:
+				current = self.vl53.distance
+				self.vl53.clear_interrupt()
+				if current is None:
+					failCounter += 1
+				else:
+					return current
 
 
 class DistanceMotionEventProvider(MotionEventProvider):
 
+	NO_PROOF_TEXT = "<no proof provided>"
 	NEW_MOTION_TIME_THRESHOLD = 6
 	TRIGGER_DISTANCE_CM = 150
 	MODE_LONG = 2
 
-	def __init__(self) -> None:
+	NO_MOVE_THRESHOLD_CM = 3
+	STABLE_FOR_CALIBRATION_SEC = 10
+
+	NP_GREEN = (0, 255, 0)
+	NP_PURPLE = (255, 0, 255)
+	NP_YELLOW = (255, 255, 0)
+	NP_RED = (255, 0, 0)
+	NP_BLACK = (0, 0, 0)
+
+	def __init__(self, np: neopixel.NEOPIXEL | None) -> None:
+		self.in_motion = False
 		self.last_motion_trigger = 0
-		self.detector = MotionDetector()
+
+		if np is None:
+			self.onboard_np = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
+			self.onboard_np.brightness = 0.03
+		else:
+			self.onboard_np = np
+		self.onboard_np.fill(self.NP_PURPLE)
 
 		print("Initializing VL53L1X sensor...")
 		# For Adafruit Qt Py ESP32-S3 we need the STEMMA_I2C
@@ -77,17 +106,48 @@ class DistanceMotionEventProvider(MotionEventProvider):
 		vl53.timing_budget = 100
 		vl53.start_ranging()
 		self.vl53 = vl53
+		first_reading = self._first_reading()
+		self.baseline = self._calibrate(first_reading)
+		self.detector = MotionDetector(self.baseline, vl53)
 
+	def _first_reading(self) -> float:
 		print("Testing distance sensor...")
-		first_reading = False
-		while not first_reading:
+		first_reading: float | None = None
+		while first_reading is None:
 			if self.vl53.data_ready:
-				self.younger_reading = self.vl53.distance
-				first_reading = True
+				first_reading = self.vl53.distance
 				self.vl53.clear_interrupt()
+		print("Distance sensor is functional!")
+		return first_reading
 
-		self.in_motion = False
-		print("Distance sensor is set up.")
+	def _calibrate(self, first_reading: float) -> float:
+		print("Determining baseline distance...")
+		baseline = first_reading
+		last_distance_time = time.monotonic()
+		fist_distance_time = last_distance_time
+		while True:
+			now = time.monotonic()
+			time_passed = now - last_distance_time
+			time_passed_first = now - fist_distance_time
+			if self.vl53.data_ready:
+				current = self.vl53.distance
+				diff = abs(current - baseline)
+				if diff < self.NO_MOVE_THRESHOLD_CM:
+					self.onboard_np.fill(self.NP_YELLOW)
+					if time_passed > self.STABLE_FOR_CALIBRATION_SEC:
+						self.onboard_np.fill(self.NP_BLACK)
+						self.onboard_np.brightness = 0
+						if current is None:
+							raise Exception("Could not calibrate distance sensor!")
+						print(f"Threshold calibrated to {current}")
+						return current
+				else:
+					self.onboard_np.fill(self.NP_RED)
+					baseline = current
+					last_distance_time = now
+			time.sleep(0.5)
+			if time_passed_first > 3 * self.STABLE_FOR_CALIBRATION_SEC:
+				raise Exception("Could not calibrate distance sensor in time!")
 
 	# The caller of this function expects three possible return scenarios:
 	# - None: No motion event
@@ -97,6 +157,7 @@ class DistanceMotionEventProvider(MotionEventProvider):
 	# The function is intended to be called in a loop every 0.24 seconds.
 	def get_motion_event(self):
 		motion_event: MotionEvent | None = None
+		proof = self.NO_PROOF_TEXT
 		now_reading: None | float = None
 		if self.vl53.data_ready:
 			now_reading = self.detector.read(self.vl53.distance)
@@ -105,8 +166,10 @@ class DistanceMotionEventProvider(MotionEventProvider):
 			movement_now = False
 
 			if now_reading is not None and now_reading < self.TRIGGER_DISTANCE_CM:
-				if self.detector.is_motion_detected():
+				detection_result = self.detector.collect_motion_detected()
+				if detection_result is not None:
 					movement_now = True
+					proof = detection_result
 					motion_event = self._when_movement_now()
 
 			if self.in_motion and not movement_now:
@@ -114,28 +177,26 @@ class DistanceMotionEventProvider(MotionEventProvider):
 				time_after_trigger = current_timestamp - self.last_motion_trigger
 				if time_after_trigger > self.NEW_MOTION_TIME_THRESHOLD:
 					self.in_motion = False
-					print("Motion is gone. Will trigger callback...")
 					motion_event = MotionEvent(MotionEvent.MOTION_GONE)
 
-			self.older_reading = self.younger_reading
-			self.younger_reading = now_reading
 		if motion_event is None:
 			return None
 		else:
-			return motion_event, "<no proof provided>"
+			print(f"Motion (new: {motion_event.new_motion}) w/ proof: {proof}")
+			return motion_event, proof
 
 	def _when_movement_now(self) -> MotionEvent | None:
 		motion_event: MotionEvent | None = None
 		self.last_motion_trigger = time.time()
 		if self.in_motion is False:
 			self.in_motion = True
-			print("New Motion detected.")
 			motion_event = MotionEvent(MotionEvent.NEW_MOTION)
 		return motion_event
 
 
 def main() -> None:
-	provider = DistanceMotionEventProvider()
+	np = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
+	provider = DistanceMotionEventProvider(np)
 	while True:
 		result = provider.get_motion_event()
 		if result is not None:

@@ -78,38 +78,40 @@ class MqttDataHandler(DataHandler):
 			self.pixel.fill(LED_RED)
 
 
-def prepare_datahandler(station_name: str) -> MqttDataHandler | None:
+def prepare_datahandler(station_name: str, np: neopixel.NeoPixel) -> MqttDataHandler | None:
 	button = DigitalInOut(board.BUTTON)
 	button.switch_to_input(pull=Pull.UP)
-	pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
-	pixel.brightness = 0.03
+	np.brightness = 0.03
 	try:
-		pixel.fill(LED_ORANGE)
+		np.fill(LED_ORANGE)
 		connect_wifi()
 	except Exception as e:
 		print(f"Could not connect to Wifi: {e}")
-		pixel.fill(LED_RED)
+		np.fill(LED_RED)
 		return
 
 	bridge: MqttBridge | None = None
 	try:
 		bridge = MqttBridge(station_name)
-		pixel.fill(LED_GREEN)
+		np.fill(LED_GREEN)
 	except Exception as e:
 		print(f"Could not create bridge to MQTT broker: {e}")
-		pixel.fill(LED_RED)
+		np.fill(LED_RED)
 		disconnect_wifi()
 
 	if bridge is not None:
-		handler = MqttDataHandler(bridge, pixel, button)
+		handler = MqttDataHandler(bridge, np, button)
 		return handler
 	# Leave with None - will never happen at this point...
 
 
 def main() -> None:
 	print("Starting...")
-	station = SensorStation()
-	mqtt_handler = prepare_datahandler("Test_from_main")
+	np = neopixel.NeoPixel(board.NEOPIXEL, 1)  # type: ignore
+	np.brightness = 0.03
+
+	station = SensorStation(np)
+	mqtt_handler = prepare_datahandler("Test_from_main", np)
 	if mqtt_handler is None:
 		print("Could not create a data handler!")
 		return

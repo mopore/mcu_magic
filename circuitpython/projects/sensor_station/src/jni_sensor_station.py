@@ -6,6 +6,7 @@ from jni_motion_types import MotionEvent
 from jni_motion_provider import MotionProvider
 from jni_aq_provider import Airquality, AirqualityProvider
 from jni_lightlevel_provider import LightlevelProvider
+import neopixel
 
 
 class SensorData:
@@ -24,8 +25,8 @@ class SensorData:
 
 
 class SensorStation:
-	def __init__(self) -> None:
-		self.motion_provider = MotionProvider()
+	def __init__(self, np: neopixel.NEOPIXEL) -> None:
+		self.motion_provider = MotionProvider(np)
 		self.aq_provider: AirqualityProvider | None = None
 		try:
 			self.aq_provider = AirqualityProvider()
