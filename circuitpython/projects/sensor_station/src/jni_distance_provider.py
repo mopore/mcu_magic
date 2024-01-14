@@ -95,7 +95,7 @@ class DistanceMotionEventProvider(MotionEventProvider):
 	# - MotionEvent(MotionEvent.NEW_MOTION)
 	#
 	# The function is intended to be called in a loop every 0.24 seconds.
-	def get_motion_event(self) -> (MotionEvent, str) | None:
+	def get_motion_event(self):
 		motion_event: MotionEvent | None = None
 		now_reading: None | float = None
 		if self.vl53.data_ready:
@@ -119,7 +119,10 @@ class DistanceMotionEventProvider(MotionEventProvider):
 
 			self.older_reading = self.younger_reading
 			self.younger_reading = now_reading
-		return motion_event, "<no proof provided>"
+		if motion_event is None:
+			return None
+		else:
+			return motion_event, "<no proof provided>"
 
 	def _when_movement_now(self) -> MotionEvent | None:
 		motion_event: MotionEvent | None = None

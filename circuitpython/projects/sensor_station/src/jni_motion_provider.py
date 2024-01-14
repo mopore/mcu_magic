@@ -1,5 +1,5 @@
 from jni_distance_provider import DistanceMotionEventProvider
-from jni_motion_types import MotionEventProvider, MotionEvent
+from jni_motion_types import MotionEventProvider 
 from jni_pir_provider import PirMotionEventProvider
 
 
@@ -19,6 +19,9 @@ class MotionProvider:
 			raise Exception("Could not find a motion event provider!")
 		self.event_provider = event_provider
 
-	def get_motion(self) -> (MotionEvent, str) | None:
-		motion_event, proof = self.event_provider.get_motion_event()
-		return motion_event, proof
+	def get_motion(self):
+		result = self.event_provider.get_motion_event()
+		if result is None:
+			return None
+		else:
+			return result

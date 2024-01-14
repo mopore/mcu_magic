@@ -32,7 +32,7 @@ def main() -> None:
 		print(f"Using the following name: {station_name}")
 
 		# Use the console data viewer to output the collected data to the console...
-		handlers.append(ConsoleDataHandler())
+		# handlers.append(ConsoleDataHandler())
 		# handlers.append(TftDataHandler())
 	except Exception as e:
 		print(f"FATAL: Could not create essential services! {e}")

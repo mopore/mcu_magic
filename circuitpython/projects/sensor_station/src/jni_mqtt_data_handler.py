@@ -118,7 +118,7 @@ def main() -> None:
 	FREQUENCE_SECS = 0.5
 	while True:
 		last_time = time.monotonic()
-		sensor_data = station.collect_data(True)
+		sensor_data = station.collect_data(True, last_time)
 		mqtt_handler.handle(sensor_data, last_time)
 		time_diff = time.monotonic() - last_time
 		time_to_sleep = FREQUENCE_SECS - time_diff

@@ -1,3 +1,4 @@
+
 class MotionEvent():
 
 	NEW_MOTION = True
@@ -9,5 +10,5 @@ class MotionEvent():
 
 class MotionEventProvider:
 
-	def get_motion_event(self) -> (MotionEvent, str) | None:
+	def get_motion_event(self):
 		...
