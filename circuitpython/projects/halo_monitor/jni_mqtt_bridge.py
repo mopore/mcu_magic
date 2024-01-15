@@ -10,7 +10,7 @@ import jni_wifi
 
 class MqttBridge:
 
-	TOPIC_HISTORY_NAME = "jniHome/services/hueBridge/halo/moveHistory"
+	TOPIC_HISTORY_NAME = "jniHome/services/halo/moveHistory"
 
 	# Constants - Change depending on environment
 	MQTT_SERVER_IP = "192.168.199.119"  # Quieter2 on home network
