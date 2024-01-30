@@ -22,7 +22,7 @@ class MotionDetector:
 	def read(self, first: float | None) -> None | float:
 		if self._value_fails(first):
 			return None
-			
+
 		second = self._readNext()
 		if self._value_fails(second):
 			return None
@@ -32,7 +32,7 @@ class MotionDetector:
 			return None
 
 		self.proofText = f"base {self.baseline}cm,  1: {first}cm,  2: {second}cm,  3: {third}cm"
-		self.new_motion_detected = True	
+		self.new_motion_detected = True
 		return first
 
 	def collect_motion_detected(self) -> str | None:
@@ -41,17 +41,17 @@ class MotionDetector:
 			return self.proofText
 		return None
 
-	def _value_fails(self, first: float | None) -> bool:
-		if first is None:
+	def _value_fails(self, reading: float | None) -> bool:
+		if reading is None:
 			return True
 
-		if first > self.baseline:
+		if reading > self.baseline:
 			return True
 
-		diff_candidate1 = abs(first - self.baseline)
+		diff_candidate1 = abs(reading - self.baseline)
 		if diff_candidate1 < self.TOLERANCE_CM:
 			return True
-		
+
 		return False
 
 	def _readNext(self) -> float | None:
